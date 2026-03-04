@@ -4,7 +4,9 @@
       "Bash(npx nuxi@latest:*)",
       "Bash(yarn add:*)",
       "Bash(mkdir:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(yarn install:*)",
+      "Bash(timeout 15 yarn dev:*)"
     ]
   }
 }

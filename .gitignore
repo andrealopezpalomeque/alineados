@@ -1,31 +1,23 @@
-# Node dependencies
-node_modules
-
-# Nuxt dev/build outputs
-frontend/.output
-frontend/.data
-frontend/.nuxt
-frontend/.nitro
-frontend/.cache
-frontend/dist
-
-# Backend build outputs
-backend/dist
-
-# Logs
-logs
-*.log
-
-# Misc
-.DS_Store
-.fleet
-.idea
-.vscode
-
-# Local env files
+node_modules/
+dist/
+.output/
+.nuxt/
 .env
-.env.*
+.env.local
+*.log
+.DS_Store
+.firebase/
+.firebaserc
+
+# Keep
 !.env.example
 
-# Firebase
-.firebase
+# Additional build artifacts
+.data/
+.nitro/
+.cache/
+
+# IDE
+.fleet/
+.idea/
+.vscode/
