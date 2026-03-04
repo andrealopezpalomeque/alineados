@@ -8,7 +8,11 @@ dotenv.config();
 import './config/firebase.js';
 
 import articlesRouter from './routes/articles.js';
-import scraperTriggerRouter from './routes/scraper-trigger.js';
+import scraperTriggerRouter, { registerScraper } from './routes/scraper-trigger.js';
+import { RadioDosScraper } from './scrapers/radio-dos.js';
+
+// Register scrapers
+registerScraper(new RadioDosScraper());
 
 const app = express();
 const PORT = process.env.PORT || 3001;
