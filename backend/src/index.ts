@@ -10,9 +10,11 @@ import './config/firebase.js';
 import articlesRouter from './routes/articles.js';
 import scraperTriggerRouter, { registerScraper } from './routes/scraper-trigger.js';
 import { RadioDosScraper } from './scrapers/radio-dos.js';
+import { RadioSudamericanaScraper } from './scrapers/radio-sudamericana.js';
 
 // Register scrapers
 registerScraper(new RadioDosScraper());
+registerScraper(new RadioSudamericanaScraper());
 
 const app = express();
 const PORT = process.env.PORT || 3001;

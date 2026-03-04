@@ -10,7 +10,10 @@
       "Bash(yarn remove:*)",
       "WebFetch(domain:radiodos.com.ar)",
       "Bash(yarn build:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "WebFetch(domain:radiosudamericana.com)",
+      "WebFetch(domain:www.radiosudamericana.com)",
+      "Bash(pkill:*)"
     ]
   }
 }
