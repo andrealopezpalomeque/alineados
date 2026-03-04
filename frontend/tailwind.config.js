@@ -1,5 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  content: [
+    './app/**/*.{vue,js,ts}',
+  ],
   theme: {
     extend: {
       colors: {
@@ -10,9 +13,9 @@ module.exports = {
         paper: '#f8f9fb',
       },
       fontFamily: {
-        display: ['"Playfair Display"', 'Georgia', 'serif'],
-        body: ['"DM Sans"', 'sans-serif'],
-        editorial: ['"Source Serif 4"', 'Georgia', 'serif'],
+        playfair: ['"Playfair Display"', 'Georgia', 'serif'],
+        sans: ['"DM Sans"', 'sans-serif'],
+        'serif-body': ['"Source Serif 4"', 'Georgia', 'serif'],
       },
     },
   },
