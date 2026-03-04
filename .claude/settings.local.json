@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npx nuxi@latest:*)",
       "Bash(yarn add:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

@@ -9,6 +9,9 @@ frontend/.nitro
 frontend/.cache
 frontend/dist
 
+# Backend build outputs
+backend/dist
+
 # Logs
 logs
 *.log
