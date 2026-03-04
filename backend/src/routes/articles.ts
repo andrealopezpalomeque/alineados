@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { db } from '../config/firebase.js';
 
 const router = Router();
 
 // GET /api/articles — list articles with optional filters
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const { source, category, limit = '20', offset = '0' } = req.query;
     const limitNum = Math.min(parseInt(limit as string, 10) || 20, 100);
@@ -36,9 +36,10 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/articles/:id — get single article
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const doc = await db.collection('articles').doc(req.params.id).get();
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const doc = await db.collection('articles').doc(id).get();
 
     if (!doc.exists) {
       res.status(404).json({ error: 'Article not found' });

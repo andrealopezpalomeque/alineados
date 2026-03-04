@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { Timestamp } from 'firebase-admin/firestore';
 import { db } from '../config/firebase.js';
 import type { BaseScraper, RawArticle } from '../scrapers/base.js';
@@ -22,7 +22,7 @@ interface ScraperSummary {
 }
 
 // POST /api/scrape — trigger all registered scrapers
-router.post('/', async (_req, res) => {
+router.post('/', async (_req: Request, res: Response) => {
   const results: Record<string, ScraperSummary> = {};
 
   for (const scraper of scrapers) {
@@ -138,7 +138,7 @@ router.post('/', async (_req, res) => {
 });
 
 // GET /api/scrape/status — last scrape time, counts per source, recent errors
-router.get('/status', async (_req, res) => {
+router.get('/status', async (_req: Request, res: Response) => {
   try {
     const metaDoc = await db.collection('meta').doc('scrapeStatus').get();
     const meta = metaDoc.exists ? metaDoc.data() : { lastScrapeAt: null };
