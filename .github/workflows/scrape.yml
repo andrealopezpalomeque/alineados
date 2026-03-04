@@ -1,0 +1,24 @@
+name: Scrape News
+
+on:
+  schedule:
+    - cron: '0 */4 * * *' # Every 4 hours
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger scrape
+        run: |
+          RESPONSE=$(curl -sf -X POST "${{ secrets.BACKEND_URL }}/api/scrape" \
+            -H "Content-Type: application/json" \
+            --max-time 120)
+
+          if [ $? -ne 0 ]; then
+            echo "::error::Scrape request failed"
+            exit 1
+          fi
+
+          echo "Scrape response:"
+          echo "$RESPONSE" | jq . 2>/dev/null || echo "$RESPONSE"

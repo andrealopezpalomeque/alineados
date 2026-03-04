@@ -25,7 +25,7 @@ export abstract class BaseScraper {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; Alineados/1.0)',
       },
-      timeout: 15000,
+      timeout: 10000,
     });
     return cheerio.load(response.data);
   }
@@ -59,13 +59,19 @@ export abstract class BaseScraper {
     console.error(`[${this.source}] ERROR: ${message}`, error instanceof Error ? error.message : error);
   }
 
-  async run(): Promise<{ source: string; articles: RawArticle[]; errors: string[] }> {
+  async run(timeoutMs = 30000): Promise<{ source: string; articles: RawArticle[]; errors: string[] }> {
     const errors: string[] = [];
     let articles: RawArticle[] = [];
 
     try {
       this.log('Starting scrape...');
-      articles = await this.scrape();
+
+      const scrapePromise = this.scrape();
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Scraper timed out after ${timeoutMs}ms`)), timeoutMs),
+      );
+
+      articles = await Promise.race([scrapePromise, timeoutPromise]);
       this.log(`Found ${articles.length} articles`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);

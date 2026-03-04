@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { Timestamp } from 'firebase-admin/firestore';
 import { db } from '../config/firebase.js';
 import type { BaseScraper, RawArticle } from '../scrapers/base.js';
-import type { ScrapeResult } from '../types/index.js';
+import { isDuplicateByTitle } from '../utils/deduplication.js';
 
 const router = Router();
 
@@ -13,23 +13,73 @@ export function registerScraper(scraper: BaseScraper): void {
   scrapers.push(scraper);
 }
 
+interface ScraperSummary {
+  found: number;
+  new: number;
+  duplicates: number;
+  errors: number;
+  errorMessages: string[];
+}
+
 // POST /api/scrape — trigger all registered scrapers
 router.post('/', async (_req, res) => {
-  const results: ScrapeResult[] = [];
+  const results: Record<string, ScraperSummary> = {};
 
   for (const scraper of scrapers) {
-    const { source, articles, errors } = await scraper.run();
-    let articlesStored = 0;
+    const summary: ScraperSummary = { found: 0, new: 0, duplicates: 0, errors: 0, errorMessages: [] };
 
-    for (const article of articles) {
+    try {
+      const { source, articles, errors } = await scraper.run(120000);
+      summary.found = articles.length;
+      summary.errors = errors.length;
+      summary.errorMessages = errors;
+
+      // Fetch existing articles for this source (for dedup)
+      // Try composite query (source + scrapedAt), fall back to source-only if index missing
+      const existingTitles: string[] = [];
+      const existingUrls = new Set<string>();
+
       try {
-        // Check for duplicate by sourceUrl
-        const existing = await db.collection('articles')
-          .where('sourceUrl', '==', article.sourceUrl)
-          .limit(1)
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const existingSnapshot = await db.collection('articles')
+          .where('source', '==', source)
+          .where('scrapedAt', '>=', Timestamp.fromDate(todayStart))
           .get();
+        existingSnapshot.forEach(doc => {
+          const data = doc.data();
+          existingTitles.push(data.title as string);
+          existingUrls.add(data.sourceUrl as string);
+        });
+      } catch {
+        // Composite index not yet created — fall back to source-only query
+        console.log(`[${source}] Composite index not available, using source-only dedup`);
+        const fallbackSnapshot = await db.collection('articles')
+          .where('source', '==', source)
+          .get();
+        fallbackSnapshot.forEach(doc => {
+          const data = doc.data();
+          existingTitles.push(data.title as string);
+          existingUrls.add(data.sourceUrl as string);
+        });
+      }
 
-        if (existing.empty) {
+      for (const article of articles) {
+        try {
+          // Primary dedup: exact URL match
+          if (existingUrls.has(article.sourceUrl)) {
+            summary.duplicates++;
+            console.log(`[${source}] Skipping (URL dup): ${article.title.substring(0, 60)}...`);
+            continue;
+          }
+
+          // Secondary dedup: title similarity within same source/day
+          if (isDuplicateByTitle(article.title, existingTitles)) {
+            summary.duplicates++;
+            console.log(`[${source}] Skipping (title dup): ${article.title.substring(0, 60)}...`);
+            continue;
+          }
+
           await db.collection('articles').add({
             source,
             sourceUrl: article.sourceUrl,
@@ -38,36 +88,56 @@ router.post('/', async (_req, res) => {
             publishedAt: Timestamp.fromDate(article.publishedAt),
             scrapedAt: Timestamp.now(),
           });
-          articlesStored++;
-        }
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        errors.push(`Failed to store article "${article.title}": ${msg}`);
-      }
-    }
 
-    results.push({
-      source,
-      articlesFound: articles.length,
-      articlesStored,
-      errors,
-    });
+          // Track newly added for dedup within same batch
+          existingUrls.add(article.sourceUrl);
+          existingTitles.push(article.title);
+          summary.new++;
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          summary.errors++;
+          summary.errorMessages.push(`Failed to store "${article.title}": ${msg}`);
+        }
+      }
+
+      results[source] = summary;
+    } catch (error) {
+      // Scraper failed entirely — other scrapers still run
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`[scraper-trigger] Scraper failed entirely: ${msg}`);
+      results[scraper['source'] || 'unknown'] = {
+        found: 0,
+        new: 0,
+        duplicates: 0,
+        errors: 1,
+        errorMessages: [msg],
+      };
+    }
   }
 
   // Update scrape metadata
+  const scrapeErrors: string[] = [];
+  for (const [source, summary] of Object.entries(results)) {
+    if (summary.errorMessages.length > 0) {
+      scrapeErrors.push(...summary.errorMessages.map(e => `[${source}] ${e}`));
+    }
+  }
+
   await db.collection('meta').doc('scrapeStatus').set(
-    { lastScrapeAt: Timestamp.now() },
+    {
+      lastScrapeAt: Timestamp.now(),
+      ...(scrapeErrors.length > 0 && { recentErrors: scrapeErrors.slice(-10) }),
+    },
     { merge: true },
   );
 
   res.json({
     success: true,
-    scrapersRun: scrapers.length,
     results,
   });
 });
 
-// GET /api/scrape/status — last scrape time and counts per source
+// GET /api/scrape/status — last scrape time, counts per source, recent errors
 router.get('/status', async (_req, res) => {
   try {
     const metaDoc = await db.collection('meta').doc('scrapeStatus').get();
@@ -85,6 +155,7 @@ router.get('/status', async (_req, res) => {
       lastScrapeAt: meta?.lastScrapeAt ?? null,
       totalArticles: sourcesSnapshot.size,
       sources: sourceCounts,
+      recentErrors: meta?.recentErrors ?? [],
     });
   } catch (error) {
     console.error('Error fetching scrape status:', error);
