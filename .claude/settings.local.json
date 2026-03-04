@@ -6,7 +6,8 @@
       "Bash(mkdir:*)",
       "Bash(npx tsc:*)",
       "Bash(yarn install:*)",
-      "Bash(timeout 15 yarn dev:*)"
+      "Bash(timeout 15 yarn dev:*)",
+      "Bash(yarn remove:*)"
     ]
   }
 }
