@@ -3,6 +3,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { db } from '../config/firebase.js';
 import type { BaseScraper, RawArticle } from '../scrapers/base.js';
 import { isDuplicateByTitle } from '../utils/deduplication.js';
+import { processArticle } from '../processors/article-processor.js';
 
 const router = Router();
 
@@ -115,6 +116,46 @@ router.post('/', async (_req: Request, res: Response) => {
     }
   }
 
+  // Auto-process newly scraped articles
+  const totalNew = Object.values(results).reduce((sum, s) => sum + s.new, 0);
+  let articlesProcessed = 0;
+  let processingErrors = 0;
+
+  if (totalNew > 0) {
+    console.log(`[scraper-trigger] Processing ${totalNew} new articles...`);
+    const unprocessedSnapshot = await db.collection('articles').get();
+    const unprocessedDocs = unprocessedSnapshot.docs.filter(doc => !doc.data().processed);
+
+    for (const doc of unprocessedDocs) {
+      const data = doc.data();
+      try {
+        const fields = await processArticle({
+          title: data.title as string,
+          rawContent: data.rawContent as string,
+          source: data.source as string,
+          sourceUrl: data.sourceUrl as string,
+        });
+
+        await doc.ref.update({
+          ...fields,
+          processed: true,
+          processedAt: Timestamp.now(),
+        });
+
+        articlesProcessed++;
+        console.log(`[scraper-trigger] Processed: ${(data.title as string).substring(0, 60)}`);
+      } catch (error) {
+        processingErrors++;
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error(`[scraper-trigger] Processing error for "${data.title}": ${msg}`);
+      }
+
+      // Rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    console.log(`[scraper-trigger] Processing complete: ${articlesProcessed} ok, ${processingErrors} errors`);
+  }
+
   // Update scrape metadata
   const scrapeErrors: string[] = [];
   for (const [source, summary] of Object.entries(results)) {
@@ -134,6 +175,10 @@ router.post('/', async (_req: Request, res: Response) => {
   res.json({
     success: true,
     results,
+    processing: {
+      articlesProcessed,
+      processingErrors,
+    },
   });
 });
 

@@ -11,29 +11,51 @@ export interface Article {
   publishedAt: Timestamp | Date;
   scrapedAt: Timestamp | Date;
 
-  // AI-generated fields (from Claude processing — optional until processed)
+  // Processing status
+  processed?: boolean;
+  processedAt?: Timestamp | Date;
+
+  // AI-generated fields (from Gemini processing — optional until processed)
   summary?: string;
   category?: ArticleCategory;
+  subcategory?: string;
   politicalActors?: string[];
-  ministryRelevance?: number; // 0-100
-  sentiment?: 'positive' | 'negative' | 'neutral' | 'mixed';
+  ministryRelevance?: MinistryRelevance[];
+  sentiment?: 'positive' | 'negative' | 'neutral';
   urgency?: 'breaking' | 'important' | 'routine';
-  keyQuotes?: string[];
+  keyQuotes?: KeyQuote[];
   topics?: string[];
 }
 
+export interface MinistryRelevance {
+  ministry: string;
+  score: 'high' | 'medium' | 'low';
+}
+
+export interface KeyQuote {
+  speaker: string;
+  quote: string;
+}
+
 export type ArticleCategory =
+  | 'governor'
   | 'justice'
-  | 'security'
-  | 'legislation'
-  | 'governance'
   | 'opposition'
+  | 'ministry'
   | 'national'
-  | 'economy'
-  | 'infrastructure'
-  | 'health'
-  | 'education'
-  | 'other';
+  | 'general';
+
+export interface ProcessedFields {
+  summary: string;
+  category: ArticleCategory;
+  subcategory?: string;
+  politicalActors: string[];
+  ministryRelevance: MinistryRelevance[];
+  sentiment: 'positive' | 'neutral' | 'negative';
+  urgency: 'breaking' | 'important' | 'routine';
+  keyQuotes: KeyQuote[];
+  topics: string[];
+}
 
 export interface ScrapeResult {
   source: string;

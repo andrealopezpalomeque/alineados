@@ -15,7 +15,11 @@
       "WebFetch(domain:www.radiosudamericana.com)",
       "Bash(pkill:*)",
       "Bash(yarn tsc:*)",
-      "Bash(# Run one more time to verify — both should show 0 new, all duplicates, no errors\ncurl -s -X POST http://localhost:3001/api/scrape --max-time 600 | python3 -m json.tool 2>&1)"
+      "Bash(# Run one more time to verify — both should show 0 new, all duplicates, no errors\ncurl -s -X POST http://localhost:3001/api/scrape --max-time 600 | python3 -m json.tool 2>&1)",
+      "Bash(git push:*)",
+      "Bash(yarn workspace:*)",
+      "WebSearch",
+      "WebFetch(domain:ai.google.dev)"
     ]
   }
 }

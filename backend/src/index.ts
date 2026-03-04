@@ -9,6 +9,7 @@ import './config/firebase.js';
 
 import articlesRouter from './routes/articles.js';
 import scraperTriggerRouter, { registerScraper } from './routes/scraper-trigger.js';
+import processRouter from './routes/process.js';
 import { RadioDosScraper } from './scrapers/radio-dos.js';
 import { RadioSudamericanaScraper } from './scrapers/radio-sudamericana.js';
 
@@ -30,6 +31,7 @@ app.get('/health', (_req: Request, res: Response) => {
 // Routes
 app.use('/api/articles', articlesRouter);
 app.use('/api/scrape', scraperTriggerRouter);
+app.use('/api/process', processRouter);
 
 app.listen(PORT, () => {
   console.log(`Alineados backend running on port ${PORT}`);
