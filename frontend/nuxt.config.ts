@@ -37,6 +37,8 @@ export default defineNuxtConfig({
       firebaseStorageBucket: '',
       firebaseMessagingSenderId: '',
       firebaseAppId: '',
+      loginUser: 'admin',
+      loginPass: 'alineados2026',
     },
   },
 })

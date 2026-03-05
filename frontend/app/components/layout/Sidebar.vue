@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const route = useRoute()
 const uiStore = useUiStore()
+const authStore = useAuthStore()
 
 const navItems = [
   { label: 'Resumen del Día', icon: '📋', to: '/' },
@@ -73,6 +74,15 @@ function isActive(to: string) {
           <p class="truncate text-xs text-slate-400">Justicia y DDHH</p>
         </div>
       </div>
+
+      <!-- Logout -->
+      <button
+        class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-300"
+        @click="authStore.logout()"
+      >
+        <span class="shrink-0 text-base">&#x2192;</span>
+        <span v-if="uiStore.sidebarOpen">Cerrar sesion</span>
+      </button>
 
       <!-- Collapse toggle -->
       <button
