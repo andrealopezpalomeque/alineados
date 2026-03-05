@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { Timestamp } from 'firebase-admin/firestore';
 import { db } from '../config/firebase.js';
-import { processArticle } from '../processors/article-processor.js';
+import { processArticle, processArticleWithFiltering } from '../processors/article-processor.js';
 
 const router = Router();
 
@@ -134,6 +134,49 @@ router.delete('/reset', async (_req: Request, res: Response) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error('[process/reset] Error:', msg);
+    res.status(500).json({ error: msg });
+  }
+});
+
+// GET /api/process/errors — show last processing errors for debugging
+router.get('/errors', async (_req: Request, res: Response) => {
+  try {
+    const snapshot = await db.collection('articles').get();
+    const failed = snapshot.docs
+      .filter(doc => doc.data().lastProcessingError)
+      .map(doc => ({
+        id: doc.id,
+        title: (doc.data().title as string).substring(0, 60),
+        failures: doc.data().processingFailures,
+        error: doc.data().lastProcessingError,
+      }))
+      .slice(0, 10);
+    res.json({ failed });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: msg });
+  }
+});
+
+// GET /api/process/test-filter — test the full filtering pipeline on one article
+router.get('/test-filter', async (_req: Request, res: Response) => {
+  try {
+    const snapshot = await db.collection('articles').limit(1).get();
+    if (snapshot.empty) {
+      res.status(404).json({ error: 'No articles found' });
+      return;
+    }
+    const doc = snapshot.docs[0];
+    const data = doc.data();
+    const result = await processArticleWithFiltering({
+      title: data.title as string,
+      rawContent: data.rawContent as string,
+      source: data.source as string,
+      sourceUrl: data.sourceUrl as string,
+    });
+    res.json({ title: data.title, result });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
     res.status(500).json({ error: msg });
   }
 });
