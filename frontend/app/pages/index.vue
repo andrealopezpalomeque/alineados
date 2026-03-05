@@ -202,7 +202,7 @@ function formatLastUpdate(date: Date | null): string {
       </div>
 
       <!-- Sections -->
-      <BriefingBriefingSection
+      <BriefingSection
         v-for="section in briefing.sections"
         :key="section.title + activeType"
         :title="section.title"
