@@ -1,0 +1,31 @@
+name: Cleanup Old Articles
+
+on:
+  schedule:
+    # Daily at 06:00 UTC (3:00 AM Argentina time)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake backend
+        run: curl -sf --max-time 120 "${{ secrets.BACKEND_URL }}/health" || true
+
+      - name: Delete articles older than 90 days
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
+            "${{ secrets.BACKEND_URL }}/api/cleanup" \
+            --max-time 120)
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "$BODY" | jq . 2>/dev/null || echo "$BODY"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Cleanup failed with status $HTTP_CODE"
+            exit 1
+          fi
