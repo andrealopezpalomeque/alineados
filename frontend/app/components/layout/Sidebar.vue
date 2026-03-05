@@ -28,14 +28,9 @@ function isActive(to: string) {
     <!-- Logo -->
     <div>
       <div class="flex items-center gap-3 px-5 pt-6 pb-8">
-        <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-bold text-white"
-          :style="{ background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)' }"
-        >
-          A
-        </div>
+        <img src="/logos/logo-icon-dark.svg" alt="Alineados" class="h-10 w-10 shrink-0" />
         <div v-if="uiStore.sidebarOpen" class="min-w-0">
-          <p class="truncate font-playfair text-lg font-bold text-white">Alineados</p>
+          <p class="truncate font-display text-lg font-bold text-white">Alineados</p>
           <p class="truncate text-xs text-slate-400">Inteligencia política</p>
         </div>
       </div>

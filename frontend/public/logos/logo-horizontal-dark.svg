@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 100" fill="none">
+  
+  <!-- Dark background -->
+  <rect width="420" height="100" rx="12" fill="#0f172a"/>
+  
+  <!-- Icon container -->
+  <rect x="16" y="14" width="72" height="72" rx="18" fill="#ffffff" opacity="0.07"/>
+  
+  <!-- Four alignment bars -->
+  <rect x="30" y="34" width="6" height="38" rx="3" fill="#3b82f6" opacity="0.45"/>
+  <rect x="40.5" y="23" width="6" height="52" rx="3" fill="#3b82f6"/>
+  <rect x="51" y="29" width="6" height="43" rx="3" fill="#3b82f6" opacity="0.55"/>
+  <rect x="61.5" y="36" width="6" height="36" rx="3" fill="#3b82f6" opacity="0.40"/>
+  
+  <!-- Horizontal crossbar -->
+  <rect x="27" y="46" width="44" height="4" rx="2" fill="#60a5fa" opacity="0.85"/>
+  
+  <!-- Wordmark -->
+  <text x="104" y="57" font-family="Georgia, 'Playfair Display', 'Times New Roman', serif" font-size="36" font-weight="700" fill="#ffffff" letter-spacing="-0.8">Alineados</text>
+  
+  <!-- Tagline -->
+  <text x="106" y="76" font-family="'Helvetica Neue', 'DM Sans', Arial, sans-serif" font-size="10.5" font-weight="500" fill="#64748b" letter-spacing="3.2">INTELIGENCIA POLÍTICA</text>
+  
+</svg>

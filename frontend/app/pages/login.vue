@@ -25,13 +25,8 @@ function handleLogin() {
     <div class="w-full max-w-sm">
       <!-- Logo -->
       <div class="mb-8 flex flex-col items-center">
-        <div
-          class="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl font-playfair text-2xl font-bold text-white"
-          :style="{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }"
-        >
-          A
-        </div>
-        <h1 class="font-playfair text-2xl font-bold text-white">Alineados</h1>
+        <img src="/logos/logo-icon-light.svg" alt="Alineados" class="mb-4 h-14 w-14" />
+        <h1 class="font-display text-2xl font-bold text-white">Alineados</h1>
         <p class="mt-1 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
           Inteligencia Politica
         </p>

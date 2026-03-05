@@ -4,7 +4,7 @@ const { articles, loading, error, hasMore, loadMore } = useArticles({ category: 
 
 <template>
   <div>
-    <h1 class="font-playfair text-2xl font-bold text-slate-900 mb-6">
+    <h1 class="font-display text-2xl font-bold text-slate-900 mb-6">
       ⚖ Justicia y DDHH
     </h1>
     <ArticlesArticleList

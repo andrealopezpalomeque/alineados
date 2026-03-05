@@ -78,7 +78,7 @@ function formatDate(date: Date) {
       </div>
 
       <!-- Headline -->
-      <h1 class="font-playfair text-2xl font-bold text-slate-900 mb-4 leading-tight">
+      <h1 class="font-display text-2xl font-bold text-slate-900 mb-4 leading-tight">
         {{ article.title }}
       </h1>
 

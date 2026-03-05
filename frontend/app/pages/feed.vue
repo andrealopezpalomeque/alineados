@@ -19,7 +19,7 @@ function selectCategory(cat: ArticleCategory | null) {
 
 <template>
   <div>
-    <h1 class="font-playfair text-2xl font-bold text-slate-900 mb-6">
+    <h1 class="font-display text-2xl font-bold text-slate-900 mb-6">
       Todas las Noticias
     </h1>
 

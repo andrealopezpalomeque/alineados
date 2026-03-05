@@ -24,7 +24,9 @@
       "Bash(npx nuxi:*)",
       "Bash(node:*)",
       "Bash(gh secret:*)",
-      "Bash(gh run:*)"
+      "Bash(gh run:*)",
+      "Bash(cp:*)",
+      "Bash(yarn nuxt:*)"
     ]
   }
 }

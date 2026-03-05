@@ -12,7 +12,13 @@ export default defineNuxtConfig({
   ],
   app: {
     head: {
+      title: 'Alineados — Inteligencia Política',
       link: [
+        {
+          rel: 'icon',
+          type: 'image/svg+xml',
+          href: '/logos/logo-icon-dark.svg',
+        },
         {
           rel: 'preconnect',
           href: 'https://fonts.googleapis.com',

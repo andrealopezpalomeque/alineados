@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-navy: #0f172a;
+  --color-deep-navy: #1e293b;
+  --color-institutional-blue: #2563eb;
+  --color-steel-blue: #1e3a5f;
+  --color-light-blue: #3b82f6;
+  --color-pale-blue: #dbeafe;
+  --color-paper: #f8f9fb;
+  --color-urgente: #ef4444;
+  --color-importante: #f59e0b;
+  --color-rutina: #34d399;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--color-paper);
+  color: var(--color-navy);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Utility: editorial text (for AI-generated summaries, briefings) */
+.text-editorial {
+  font-family: 'Source Serif 4', Georgia, serif;
+}
+
+/* Utility: display headings */
+.text-display {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+/* Source tag base style */
+.source-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  line-height: 1.5;
+}
+
+/* Urgency badges */
+.badge-urgente {
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  letter-spacing: 0.025em;
+}
+
+.badge-importante {
+  background-color: #fef3c7;
+  color: #92400e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  letter-spacing: 0.025em;
+}
