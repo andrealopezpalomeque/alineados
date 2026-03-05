@@ -8,17 +8,32 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - name: Trigger scrape
+      - name: Wake up Render backend
         run: |
-          RESPONSE=$(curl -sf -X POST "${{ secrets.BACKEND_URL }}/api/scrape" \
-            -H "Content-Type: application/json" \
-            --max-time 120)
+          echo "Pinging backend to wake from sleep..."
+          curl -sf --max-time 120 "${{ secrets.BACKEND_URL }}/health" || true
+          echo "Waiting for backend to fully start..."
+          sleep 10
 
-          if [ $? -ne 0 ]; then
-            echo "::error::Scrape request failed"
+      - name: Trigger scrape + process
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.BACKEND_URL }}/api/scrape" \
+            -H "Content-Type: application/json" \
+            --max-time 600)
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "HTTP Status: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Scrape failed with status $HTTP_CODE"
+            echo "Response: $BODY"
             exit 1
           fi
 
-          echo "Scrape response:"
-          echo "$RESPONSE" | jq . 2>/dev/null || echo "$RESPONSE"
+          echo "$BODY" | jq -r '.results | to_entries[] | "\(.key): \(.value.found) found, \(.value.new) new, \(.value.duplicates) dupes"' 2>/dev/null
+          echo "$BODY" | jq -r '"Processing: \(.processing.articlesProcessed) ok, \(.processing.processingErrors) errors"' 2>/dev/null

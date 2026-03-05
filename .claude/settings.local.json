@@ -21,7 +21,10 @@
       "WebSearch",
       "WebFetch(domain:ai.google.dev)",
       "Bash(yarn dev:*)",
-      "Bash(npx nuxi:*)"
+      "Bash(npx nuxi:*)",
+      "Bash(node:*)",
+      "Bash(gh secret:*)",
+      "Bash(gh run:*)"
     ]
   }
 }

@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Articles: public read, no client write
+    match /articles/{articleId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Scrape/process metadata: public read
+    match /meta/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
