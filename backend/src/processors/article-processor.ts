@@ -116,7 +116,7 @@ function validateFields(fields: ProcessedFields): ProcessedFields {
   return {
     summary: typeof fields.summary === 'string' ? fields.summary : '',
     category: VALID_CATEGORIES.includes(fields.category as any) ? fields.category : 'general',
-    subcategory: typeof fields.subcategory === 'string' ? fields.subcategory : undefined,
+    ...(typeof fields.subcategory === 'string' && { subcategory: fields.subcategory }),
     relevance: VALID_RELEVANCES.includes(fields.relevance as any) ? fields.relevance : 'low',
     politicalActors: Array.isArray(fields.politicalActors) ? fields.politicalActors : [],
     ministryRelevance: Array.isArray(fields.ministryRelevance) ? fields.ministryRelevance : [],
