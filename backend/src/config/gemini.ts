@@ -9,5 +9,5 @@ const genAI = new GoogleGenerativeAI(apiKey || '');
 
 export const geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
-// Fast model for relevance gate (Layer 2 filtering)
-export const geminiModelFast = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+// Model for relevance gate (Layer 2 filtering) — same model, gate prompt is tiny
+export const geminiModelFast = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
