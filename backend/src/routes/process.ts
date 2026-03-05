@@ -106,4 +106,36 @@ router.get('/test', async (_req: Request, res: Response) => {
   }
 });
 
+// DELETE /api/process/reset — wipe all articles so next scrape starts fresh
+router.delete('/reset', async (_req: Request, res: Response) => {
+  try {
+    const snapshot = await db.collection('articles').get();
+    const total = snapshot.size;
+
+    if (total === 0) {
+      res.json({ success: true, deleted: 0 });
+      return;
+    }
+
+    // Firestore batch delete (max 500 per batch)
+    const batchSize = 500;
+    let deleted = 0;
+
+    for (let i = 0; i < snapshot.docs.length; i += batchSize) {
+      const batch = db.batch();
+      const chunk = snapshot.docs.slice(i, i + batchSize);
+      chunk.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      deleted += chunk.length;
+    }
+
+    console.log(`[process/reset] Deleted ${deleted} articles`);
+    res.json({ success: true, deleted });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[process/reset] Error:', msg);
+    res.status(500).json({ error: msg });
+  }
+});
+
 export default router;
