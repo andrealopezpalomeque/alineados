@@ -1,18 +1,11 @@
 <script setup lang="ts">
 import type { BriefingItem } from '~/types/briefing'
 
-const props = defineProps<{
+defineProps<{
   title: string
   icon: string
   items: BriefingItem[]
-  initialExpanded?: boolean
 }>()
-
-const hasBreaking = computed(() =>
-  props.items.some(item => item.urgency === 'breaking'),
-)
-
-const expanded = ref(props.initialExpanded ?? hasBreaking.value)
 
 const urgencyDotClass: Record<string, string> = {
   breaking: 'bg-red-500',
@@ -31,21 +24,17 @@ function goToArticle(articleId: string) {
 
 <template>
   <div>
-    <button
-      class="flex w-full items-center justify-between py-3 group"
-      @click="expanded = !expanded"
-    >
-      <div class="flex items-center gap-2.5">
-        <span class="text-xl leading-none">{{ icon }}</span>
-        <h2 class="font-display text-lg font-bold text-slate-900">{{ title }}</h2>
-        <span class="text-sm text-slate-400 font-body">{{ items.length }}</span>
-      </div>
-      <span class="text-sm text-slate-400 font-body group-hover:text-slate-600 transition-colors">
-        {{ expanded ? 'Colapsar' : 'Expandir' }} {{ expanded ? '\u25B2' : '\u25BC' }}
-      </span>
-    </button>
+    <div class="flex items-center gap-2.5 py-3">
+      <span class="text-xl leading-none">{{ icon }}</span>
+      <h2 class="font-display text-lg font-bold text-slate-800">{{ title }}</h2>
+      <span class="text-sm text-slate-400 font-body">{{ items.length }}</span>
+    </div>
 
-    <div v-show="expanded" class="space-y-3 pb-6">
+    <div v-if="items.length === 0" class="py-4">
+      <p class="text-sm text-slate-400 italic font-body">Sin novedades en esta sección.</p>
+    </div>
+
+    <div v-else class="space-y-3 pb-6">
       <div
         v-for="item in items"
         :key="item.articleId"
@@ -61,15 +50,11 @@ function goToArticle(articleId: string) {
             <div class="mb-2 flex flex-wrap items-center gap-2">
               <BriefingUrgencyBadge :urgency="item.urgency" />
               <BriefingSourceTag :source="item.source" />
-              <span class="text-xs text-slate-400 font-body">{{ item.time }}</span>
             </div>
             <h3 class="font-body text-[15px] font-semibold text-slate-900 leading-snug">
               {{ item.headline }}
             </h3>
-            <p
-              v-if="item.urgency !== 'routine' || expanded"
-              class="mt-1.5 font-editorial text-sm text-slate-500 leading-relaxed"
-            >
+            <p class="mt-1.5 font-editorial text-sm text-slate-500 leading-relaxed">
               {{ item.summary }}
             </p>
           </div>

@@ -20,12 +20,10 @@ const relevanceColors: Record<string, { color: string; bg: string }> = {
 
 function formatDate(date: Date) {
   return new Date(date).toLocaleDateString('es-AR', {
-    weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    timeZone: 'America/Argentina/Cordoba',
   })
 }
 </script>

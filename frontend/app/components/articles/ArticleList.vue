@@ -19,7 +19,7 @@ function formatTime(date: Date) {
   const diffHours = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60))
   if (diffHours < 1) return 'Hace minutos'
   if (diffHours < 24) return `Hace ${diffHours}h`
-  return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })
+  return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', timeZone: 'America/Argentina/Cordoba' })
 }
 </script>
 

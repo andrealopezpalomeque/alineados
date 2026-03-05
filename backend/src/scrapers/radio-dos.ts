@@ -164,7 +164,8 @@ export class RadioDosScraper extends BaseScraper {
       const month = MONTHS[monthName];
 
       if (month !== undefined) {
-        return new Date(year, month, day);
+        // Noon ART (15:00 UTC) to safely land on the correct calendar day
+        return new Date(Date.UTC(year, month, day, 15, 0, 0));
       }
     }
 
