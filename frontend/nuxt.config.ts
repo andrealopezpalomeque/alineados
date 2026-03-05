@@ -37,6 +37,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
+      apiBaseUrl: '',
       firebaseApiKey: '',
       firebaseAuthDomain: '',
       firebaseProjectId: '',
