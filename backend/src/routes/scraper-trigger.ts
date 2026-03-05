@@ -41,11 +41,16 @@ router.post('/', async (_req: Request, res: Response) => {
       const existingUrls = new Set<string>();
 
       try {
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
+        // Use Argentina time (UTC-3) for "today" boundary
+        const now = new Date();
+        const artOffset = -3 * 60; // Argentina UTC-3 in minutes
+        const artNow = new Date(now.getTime() + (artOffset + now.getTimezoneOffset()) * 60000);
+        const todayStart = new Date(artNow.getFullYear(), artNow.getMonth(), artNow.getDate());
+        // Convert back to UTC for Firestore query
+        const todayStartUtc = new Date(todayStart.getTime() - (artOffset + now.getTimezoneOffset()) * 60000);
         const existingSnapshot = await db.collection('articles')
           .where('source', '==', source)
-          .where('scrapedAt', '>=', Timestamp.fromDate(todayStart))
+          .where('scrapedAt', '>=', Timestamp.fromDate(todayStartUtc))
           .get();
         existingSnapshot.forEach(doc => {
           const data = doc.data();
@@ -116,44 +121,60 @@ router.post('/', async (_req: Request, res: Response) => {
     }
   }
 
-  // Auto-process newly scraped articles
-  const totalNew = Object.values(results).reduce((sum, s) => sum + s.new, 0);
+  // Auto-process unprocessed articles (always runs — retries previous failures too)
   let articlesProcessed = 0;
   let processingErrors = 0;
 
-  if (totalNew > 0) {
-    console.log(`[scraper-trigger] Processing ${totalNew} new articles...`);
+  {
     const unprocessedSnapshot = await db.collection('articles').get();
-    const unprocessedDocs = unprocessedSnapshot.docs.filter(doc => !doc.data().processed);
-
-    for (const doc of unprocessedDocs) {
+    const unprocessedDocs = unprocessedSnapshot.docs.filter(doc => {
       const data = doc.data();
-      try {
-        const fields = await processArticle({
-          title: data.title as string,
-          rawContent: data.rawContent as string,
-          source: data.source as string,
-          sourceUrl: data.sourceUrl as string,
-        });
+      // Skip already processed
+      if (data.processed) return false;
+      // Skip articles that failed 3+ times (avoid infinite retries)
+      if (data.processingFailures >= 3) return false;
+      return true;
+    });
 
-        await doc.ref.update({
-          ...fields,
-          processed: true,
-          processedAt: Timestamp.now(),
-        });
+    if (unprocessedDocs.length > 0) {
+      console.log(`[scraper-trigger] Processing ${unprocessedDocs.length} unprocessed articles...`);
 
-        articlesProcessed++;
-        console.log(`[scraper-trigger] Processed: ${(data.title as string).substring(0, 60)}`);
-      } catch (error) {
-        processingErrors++;
-        const msg = error instanceof Error ? error.message : String(error);
-        console.error(`[scraper-trigger] Processing error for "${data.title}": ${msg}`);
+      for (const doc of unprocessedDocs) {
+        const data = doc.data();
+        try {
+          const fields = await processArticle({
+            title: data.title as string,
+            rawContent: data.rawContent as string,
+            source: data.source as string,
+            sourceUrl: data.sourceUrl as string,
+          });
+
+          await doc.ref.update({
+            ...fields,
+            processed: true,
+            processedAt: Timestamp.now(),
+          });
+
+          articlesProcessed++;
+          console.log(`[scraper-trigger] Processed: ${(data.title as string).substring(0, 60)}`);
+        } catch (error) {
+          processingErrors++;
+          const msg = error instanceof Error ? error.message : String(error);
+          console.error(`[scraper-trigger] Processing error for "${data.title}": ${msg}`);
+
+          // Track failure count so we don't retry indefinitely
+          const failures = (data.processingFailures as number) || 0;
+          await doc.ref.update({
+            processingFailures: failures + 1,
+            lastProcessingError: msg,
+          });
+        }
+
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
-
-      // Rate limiting
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log(`[scraper-trigger] Processing complete: ${articlesProcessed} ok, ${processingErrors} errors`);
     }
-    console.log(`[scraper-trigger] Processing complete: ${articlesProcessed} ok, ${processingErrors} errors`);
   }
 
   // Update scrape metadata

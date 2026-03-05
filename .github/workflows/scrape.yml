@@ -2,7 +2,8 @@ name: Scrape News
 
 on:
   schedule:
-    - cron: '0 */4 * * *' # Every 4 hours
+    # Every 3 hours from 09:00 to 02:00 UTC = 6AM to 11PM Argentina (UTC-3)
+    - cron: '0 9,12,15,18,21,0 * * *'
   workflow_dispatch: # Manual trigger
 
 jobs:
