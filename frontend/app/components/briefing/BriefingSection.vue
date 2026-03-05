@@ -45,7 +45,7 @@ function goToArticle(articleId: string) {
       </span>
     </button>
 
-    <div class="space-y-3 pb-6">
+    <div v-show="expanded" class="space-y-3 pb-6">
       <div
         v-for="item in items"
         :key="item.articleId"

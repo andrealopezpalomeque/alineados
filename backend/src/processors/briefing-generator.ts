@@ -189,20 +189,33 @@ async function summarizeCategory(
   const categoryName = CATEGORY_SECTION_MAP[category]?.title || category;
   console.log(`[briefing] Processing category: ${category} (${articles.length} articles)...`);
 
-  const articlesJson = articles.map(a => ({
-    id: a.id,
-    title: a.title,
-    source: a.source,
-    summary: a.summary,
-    urgency: a.urgency,
-    politicalActors: a.politicalActors,
-    keyQuotes: a.keyQuotes,
-    publishedAt: a.publishedAt,
-  }));
+  const articlesJson = articles.map(a => {
+    // Format publishedAt as HH:mm ART so Gemini returns a clean time string
+    let timeStr = '';
+    const raw = a.publishedAt;
+    if (raw instanceof Timestamp) {
+      timeStr = formatARTTime(raw.toDate());
+    } else if (raw instanceof Date) {
+      timeStr = formatARTTime(raw);
+    } else if (typeof raw === 'string' || typeof raw === 'number') {
+      timeStr = formatARTTime(new Date(raw));
+    }
+
+    return {
+      id: a.id,
+      title: a.title,
+      source: a.source,
+      summary: a.summary,
+      urgency: a.urgency,
+      politicalActors: a.politicalActors,
+      keyQuotes: a.keyQuotes,
+      time: timeStr,
+    };
+  });
 
   const prompt = `You are a political analyst for Corrientes Province, Argentina. Governor: Juan Pablo Valdés (UCR).
 From these articles in the "${categoryName}" category, select the 3-5 most politically relevant items for the Minister of Justice and Human Rights.
-For each selected item return: { articleId, headline, summary (1-2 sentences, factual, formal tone), urgency (breaking/important/routine), source, time }
+For each selected item return: { articleId, headline, summary (1-2 sentences, factual, formal tone), urgency (breaking/important/routine), source, time (use the time field from the input, format HH:mm) }
 Respond ONLY with valid JSON: { "items": [...] }
 
 Articles:
