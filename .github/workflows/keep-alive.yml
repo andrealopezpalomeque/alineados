@@ -1,7 +1,8 @@
 name: Keep Alive
 on:
-  schedule:
-    - cron: '*/14 * * * *'
+  # Removed — using cronjob.org for reliable keep-alive pings.
+  # GitHub Actions cron has 5-30+ min delays, too unreliable for keep-alive.
+  workflow_dispatch:
 jobs:
   ping:
     runs-on: ubuntu-latest
