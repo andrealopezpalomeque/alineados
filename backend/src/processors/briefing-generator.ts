@@ -5,6 +5,8 @@ import type { Article, ArticleCategory } from '../types/index.js';
 
 const MAX_ARTICLES_PER_CATEGORY = 15;
 
+export type BriefingType = 'recap' | 'midday';
+
 const URGENCY_ORDER: Record<string, number> = { breaking: 0, important: 1, routine: 2 };
 
 const CATEGORY_SECTION_MAP: Record<string, { title: string; icon: string }> = {
@@ -35,6 +37,7 @@ export interface BriefingSection {
 
 export interface Briefing {
   id: string;
+  type: BriefingType;
   generatedAt: Timestamp;
   executiveSummary: string;
   sections: BriefingSection[];
@@ -43,6 +46,7 @@ export interface Briefing {
 // Track last generation attempt for status endpoint
 let lastGenerationStatus: {
   date: string;
+  type: BriefingType;
   attemptedAt: Date;
   success: boolean;
   error?: string;
@@ -65,11 +69,23 @@ function getARTDayBoundaries(date: Date): { start: Date; end: Date } {
   return { start, end };
 }
 
+function getARTDayStart(date: Date): Date {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+  return new Date(Date.UTC(year, month, day, 3, 0, 0, 0));
+}
+
 function getYesterdayART(): Date {
   const now = new Date();
   const artNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
   artNow.setDate(artNow.getDate() - 1);
   return artNow;
+}
+
+function getTodayART(): Date {
+  const now = new Date();
+  return new Date(now.getTime() - 3 * 60 * 60 * 1000);
 }
 
 function formatDateId(date: Date): string {
@@ -79,9 +95,14 @@ function formatDateId(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-async function fetchArticlesForDate(date: Date): Promise<(Article & { id: string })[]> {
-  const { start, end } = getARTDayBoundaries(date);
+function formatARTTime(date: Date): string {
+  const artTime = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+  const h = String(artTime.getUTCHours()).padStart(2, '0');
+  const m = String(artTime.getUTCMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
 
+async function fetchArticlesForRange(start: Date, end: Date): Promise<(Article & { id: string })[]> {
   const snapshot = await db.collection('articles')
     .where('processed', '==', true)
     .where('publishedAt', '>=', Timestamp.fromDate(start))
@@ -104,7 +125,6 @@ function groupByCategory(articles: (Article & { id: string })[]): Record<string,
     groups[cat].push(article);
   }
 
-  // Sort each group: breaking first, then important, then routine, then by most recent
   for (const cat of Object.keys(groups)) {
     groups[cat].sort((a, b) => {
       const urgA = URGENCY_ORDER[a.urgency || 'routine'] ?? 2;
@@ -116,7 +136,6 @@ function groupByCategory(articles: (Article & { id: string })[]): Record<string,
       return timeB - timeA;
     });
 
-    // Cap at MAX_ARTICLES_PER_CATEGORY
     if (groups[cat].length > MAX_ARTICLES_PER_CATEGORY) {
       groups[cat] = groups[cat].slice(0, MAX_ARTICLES_PER_CATEGORY);
     }
@@ -161,7 +180,6 @@ async function callGeminiWithRetry<T>(prompt: string, label: string): Promise<T>
   throw new Error('Unreachable');
 }
 
-// PASS 1: Summarize each category separately
 async function summarizeCategory(
   category: string,
   articles: (Article & { id: string })[],
@@ -194,9 +212,10 @@ ${JSON.stringify(articlesJson, null, 2)}`;
   return items;
 }
 
-// PASS 2: Generate executive summary and final section ordering
 async function generateExecutiveSummary(
   selectedByCategory: Record<string, BriefingItem[]>,
+  type: BriefingType,
+  updateTime?: string,
 ): Promise<{ executiveSummary: string; sections: BriefingSection[] }> {
   console.log('[briefing] Pass 2: generating executive summary...');
 
@@ -208,11 +227,15 @@ async function generateExecutiveSummary(
     }
   }
 
-  const prompt = `You are preparing the morning briefing for the Minister of Justice and Human Rights of Corrientes Province, Argentina.
+  const summaryInstruction = type === 'midday'
+    ? `1. "executiveSummary": 3-5 sentence resumen de la jornada hasta el momento. Lead with the most important development. End with "Actualizado a las ${updateTime || '18:00'}."`
+    : '1. "executiveSummary": 3-5 sentence overview of the political day. Lead with the most important development.';
+
+  const prompt = `You are preparing the ${type === 'midday' ? 'midday update' : 'morning briefing'} for the Minister of Justice and Human Rights of Corrientes Province, Argentina.
 Governor: Juan Pablo Valdés (Vamos Corrientes / UCR coalition, sworn in Dec 2025).
 
 From these pre-selected items, generate:
-1. "executiveSummary": 3-5 sentence overview of the political day. Lead with the most important development.
+${summaryInstruction}
 2. "sections": repackage the items into sections in this order:
    - "El Gobernador" (icon: 🏛)
    - "Justicia y DDHH" (icon: ⚖)
@@ -232,28 +255,59 @@ ${JSON.stringify(selectedItemsJson, null, 2)}`;
   );
 }
 
-export async function generateBriefing(targetDate?: Date): Promise<Briefing> {
-  const date = targetDate || getYesterdayART();
+export interface GenerateBriefingOptions {
+  date?: string;
+  type?: BriefingType;
+}
+
+export async function generateBriefing(options?: GenerateBriefingOptions): Promise<Briefing> {
+  const type: BriefingType = options?.type || 'recap';
+
+  let date: Date;
+  if (options?.date) {
+    date = new Date(options.date + 'T12:00:00-03:00');
+  } else {
+    date = type === 'recap' ? getYesterdayART() : getTodayART();
+  }
+
   const dateId = formatDateId(date);
+  const briefingId = `${dateId}-${type}`;
 
-  console.log(`[briefing] Generating briefing for ${dateId}`);
+  console.log(`[briefing] Generating ${type} briefing for ${dateId} (id: ${briefingId})`);
 
-  const articles = await fetchArticlesForDate(date);
-  console.log(`[briefing] Found ${articles.length} processed articles for ${dateId}`);
+  // Determine query range
+  let start: Date;
+  let end: Date;
+
+  if (type === 'midday') {
+    start = getARTDayStart(date);
+    end = new Date(); // now
+  } else {
+    const bounds = getARTDayBoundaries(date);
+    start = bounds.start;
+    end = bounds.end;
+  }
+
+  const articles = await fetchArticlesForRange(start, end);
+  console.log(`[briefing] Found ${articles.length} processed articles for ${dateId} (${type})`);
 
   if (articles.length === 0) {
     const briefing: Briefing = {
-      id: dateId,
+      id: briefingId,
+      type,
       generatedAt: Timestamp.now(),
-      executiveSummary: 'No se registraron noticias relevantes.',
+      executiveSummary: type === 'midday'
+        ? `No se registraron noticias relevantes hasta el momento. Actualizado a las ${formatARTTime(new Date())}.`
+        : 'No se registraron noticias relevantes.',
       sections: [],
     };
 
-    await db.collection('dailyBriefings').doc(dateId).set(briefing);
-    console.log(`[briefing] Stored empty briefing for ${dateId}`);
+    await db.collection('dailyBriefings').doc(briefingId).set(briefing);
+    console.log(`[briefing] Stored empty ${type} briefing for ${dateId}`);
 
     lastGenerationStatus = {
       date: dateId,
+      type,
       attemptedAt: new Date(),
       success: true,
       articleCount: 0,
@@ -264,7 +318,6 @@ export async function generateBriefing(targetDate?: Date): Promise<Briefing> {
   }
 
   try {
-    // Group articles by category
     const groups = groupByCategory(articles);
     const categories = Object.keys(groups).filter(cat => groups[cat].length > 0);
     console.log(`[briefing] Categories with articles: ${categories.join(', ')}`);
@@ -288,16 +341,18 @@ export async function generateBriefing(targetDate?: Date): Promise<Briefing> {
 
     if (totalSelected === 0) {
       const briefing: Briefing = {
-        id: dateId,
+        id: briefingId,
+        type,
         generatedAt: Timestamp.now(),
         executiveSummary: 'No se identificaron noticias de relevancia política.',
         sections: [],
       };
 
-      await db.collection('dailyBriefings').doc(dateId).set(briefing);
+      await db.collection('dailyBriefings').doc(briefingId).set(briefing);
 
       lastGenerationStatus = {
         date: dateId,
+        type,
         attemptedAt: new Date(),
         success: true,
         articleCount: articles.length,
@@ -308,20 +363,23 @@ export async function generateBriefing(targetDate?: Date): Promise<Briefing> {
     }
 
     // PASS 2: Executive summary + final sections
-    const parsed = await generateExecutiveSummary(categoryResults);
+    const updateTime = type === 'midday' ? formatARTTime(new Date()) : undefined;
+    const parsed = await generateExecutiveSummary(categoryResults, type, updateTime);
 
     const briefing: Briefing = {
-      id: dateId,
+      id: briefingId,
+      type,
       generatedAt: Timestamp.now(),
       executiveSummary: parsed.executiveSummary || '',
       sections: Array.isArray(parsed.sections) ? parsed.sections : [],
     };
 
-    await db.collection('dailyBriefings').doc(dateId).set(briefing);
-    console.log(`[briefing] Stored briefing for ${dateId} with ${briefing.sections.length} sections`);
+    await db.collection('dailyBriefings').doc(briefingId).set(briefing);
+    console.log(`[briefing] Stored ${type} briefing for ${dateId} with ${briefing.sections.length} sections`);
 
     lastGenerationStatus = {
       date: dateId,
+      type,
       attemptedAt: new Date(),
       success: true,
       articleCount: articles.length,
@@ -330,19 +388,21 @@ export async function generateBriefing(targetDate?: Date): Promise<Briefing> {
 
     return briefing;
   } catch (error) {
-    console.error(`[briefing] Generation failed for ${dateId}:`, error);
+    console.error(`[briefing] Generation failed for ${briefingId}:`, error);
 
     const partialBriefing: Briefing = {
-      id: dateId,
+      id: briefingId,
+      type,
       generatedAt: Timestamp.now(),
       executiveSummary: `Error al generar el briefing. Se encontraron ${articles.length} artículos pero el procesamiento falló.`,
       sections: [],
     };
 
-    await db.collection('dailyBriefings').doc(dateId).set(partialBriefing);
+    await db.collection('dailyBriefings').doc(briefingId).set(partialBriefing);
 
     lastGenerationStatus = {
       date: dateId,
+      type,
       attemptedAt: new Date(),
       success: false,
       error: error instanceof Error ? error.message : String(error),

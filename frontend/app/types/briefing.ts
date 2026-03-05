@@ -1,3 +1,5 @@
+export type BriefingType = 'recap' | 'midday'
+
 export interface BriefingItem {
   articleId: string
   headline: string
@@ -15,7 +17,13 @@ export interface BriefingSection {
 
 export interface Briefing {
   id: string
+  type: BriefingType
   generatedAt: string | { _seconds: number; _nanoseconds: number }
   executiveSummary: string
   sections: BriefingSection[]
+}
+
+export interface DateBriefings {
+  recap?: Briefing
+  midday?: Briefing
 }

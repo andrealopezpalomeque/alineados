@@ -1,27 +1,50 @@
 <script setup lang="ts">
-const { briefing, loading, error, urgencyCounts, lastFetchedAt, refresh } = useTodayBriefing()
+const {
+  briefing, hasBoth, activeType, setActiveType,
+  loading, error, urgencyCounts, lastFetchedAt, refresh,
+} = useTodayBriefing()
 
-const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado']
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ]
 
-function formatBriefingDate(raw: string | { _seconds: number; _nanoseconds: number }): string {
-  let date: Date
-  if (typeof raw === 'string') {
-    date = new Date(raw)
-  } else if (raw && '_seconds' in raw) {
-    date = new Date(raw._seconds * 1000)
-  } else {
-    date = new Date()
-  }
-  const dayName = DAYS[date.getDay()]
-  const day = date.getDate()
-  const month = MONTHS[date.getMonth()]
-  const year = date.getFullYear()
-  return `${dayName} ${day} de ${month}, ${year}`
+function toDate(raw: string | { _seconds: number; _nanoseconds: number }): Date {
+  if (typeof raw === 'string') return new Date(raw)
+  if (raw && '_seconds' in raw) return new Date(raw._seconds * 1000)
+  return new Date()
 }
+
+function formatSpanishDate(raw: string | { _seconds: number; _nanoseconds: number }): string {
+  const date = toDate(raw)
+  return `${DAYS[date.getDay()]} ${date.getDate()} de ${MONTHS[date.getMonth()]}, ${date.getFullYear()}`
+}
+
+function formatARTTime(raw: string | { _seconds: number; _nanoseconds: number }): string {
+  const date = toDate(raw)
+  return date.toLocaleTimeString('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'America/Argentina/Cordoba',
+  })
+}
+
+const heroSubtitle = computed(() => {
+  if (!briefing.value) return ''
+  const dateStr = formatSpanishDate(briefing.value.generatedAt)
+  if (briefing.value.type === 'midday') {
+    const time = formatARTTime(briefing.value.generatedAt)
+    return `Avance del dia — ${dateStr} · Actualizado ${time}`
+  }
+  return `Resumen del dia — ${dateStr}`
+})
+
+const heroTitle = computed(() => {
+  if (!briefing.value) return 'Resumen del Dia'
+  return briefing.value.type === 'midday' ? 'Avance del Dia' : 'Resumen del Dia'
+})
 
 function formatLastUpdate(date: Date | null): string {
   if (!date) return ''
@@ -38,7 +61,6 @@ function formatLastUpdate(date: Date | null): string {
   <div>
     <!-- LOADING STATE -->
     <div v-if="loading && !briefing" class="space-y-6">
-      <!-- Skeleton hero -->
       <div class="rounded-2xl bg-slate-800 p-8 animate-pulse">
         <div class="h-3 w-40 rounded bg-slate-600 mb-4" />
         <div class="h-7 w-72 rounded bg-slate-600 mb-5" />
@@ -53,7 +75,6 @@ function formatLastUpdate(date: Date | null): string {
           <div class="h-5 w-20 rounded bg-slate-600" />
         </div>
       </div>
-      <!-- Skeleton sections -->
       <div v-for="n in 3" :key="n" class="space-y-3">
         <div class="h-6 w-48 rounded bg-slate-200 animate-pulse" />
         <div
@@ -96,7 +117,7 @@ function formatLastUpdate(date: Date | null): string {
       </div>
     </div>
 
-    <!-- EMPTY STATE (no briefing) -->
+    <!-- EMPTY STATE -->
     <div
       v-else-if="!loading && !briefing"
       class="flex flex-col items-center justify-center py-20 text-center"
@@ -118,15 +139,14 @@ function formatLastUpdate(date: Date | null): string {
           background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f2438 100%)',
         }"
       >
-        <!-- Cross pattern overlay -->
         <div class="absolute inset-0 opacity-[0.05] hero-pattern" />
 
         <div class="relative">
           <p class="text-sm font-body uppercase tracking-widest text-slate-400 mb-2">
-            {{ formatBriefingDate(briefing.generatedAt) }}
+            {{ heroSubtitle }}
           </p>
           <h1 class="font-display text-2xl font-bold text-white mb-4">
-            Resumen del Dia
+            {{ heroTitle }}
           </h1>
           <p class="font-editorial text-base text-slate-300 leading-relaxed max-w-3xl">
             {{ briefing.executiveSummary }}
@@ -159,10 +179,32 @@ function formatLastUpdate(date: Date | null): string {
         </div>
       </div>
 
+      <!-- Recap / Midday toggle -->
+      <div v-if="hasBoth" class="flex gap-2">
+        <button
+          class="rounded-full px-4 py-1.5 text-sm font-semibold font-body transition-colors"
+          :class="activeType === 'recap'
+            ? 'bg-slate-800 text-white'
+            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+          @click="setActiveType('recap')"
+        >
+          Resumen de ayer
+        </button>
+        <button
+          class="rounded-full px-4 py-1.5 text-sm font-semibold font-body transition-colors"
+          :class="activeType === 'midday'
+            ? 'bg-slate-800 text-white'
+            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+          @click="setActiveType('midday')"
+        >
+          Avance del dia
+        </button>
+      </div>
+
       <!-- Sections -->
       <BriefingBriefingSection
         v-for="section in briefing.sections"
-        :key="section.title"
+        :key="section.title + activeType"
         :title="section.title"
         :icon="section.icon"
         :items="section.items"

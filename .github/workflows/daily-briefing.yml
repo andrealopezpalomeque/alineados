@@ -2,15 +2,41 @@ name: Daily Briefing
 
 on:
   schedule:
-    # 09:00 UTC = 06:00 ART (Argentina time)
+    # 09:00 UTC = 06:00 ART — morning recap of yesterday
     - cron: '0 9 * * *'
-  workflow_dispatch: # Manual trigger
+    # 21:00 UTC = 18:00 ART — midday update of today so far
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'Briefing type (recap or midday)'
+        required: false
+        default: 'recap'
+        type: choice
+        options:
+          - recap
+          - midday
 
 jobs:
   generate-briefing:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Determine briefing type
+        id: briefing-type
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            CRON="${{ github.event.schedule }}"
+            if [ "$CRON" = "0 21 * * *" ]; then
+              echo "type=midday" >> $GITHUB_OUTPUT
+            else
+              echo "type=recap" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "type=${{ inputs.type || 'recap' }}" >> $GITHUB_OUTPUT
+          fi
+          echo "Briefing type: $(cat $GITHUB_OUTPUT)"
+
       - name: Wake up Render backend
         run: |
           echo "Pinging backend to wake from sleep..."
@@ -18,12 +44,16 @@ jobs:
           echo "Waiting for backend to fully start..."
           sleep 10
 
-      - name: Generate daily briefing
+      - name: Generate briefing
         run: |
+          TYPE="${{ steps.briefing-type.outputs.type }}"
+          echo "Generating $TYPE briefing..."
+
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             "${{ secrets.BACKEND_URL }}/api/briefings/generate" \
             -H "Content-Type: application/json" \
-            --max-time 120)
+            -d "{\"type\": \"$TYPE\"}" \
+            --max-time 180)
 
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           BODY=$(echo "$RESPONSE" | head -n -1)
@@ -36,5 +66,5 @@ jobs:
             exit 1
           fi
 
-          echo "$BODY" | jq -r '"Briefing \(.briefing.id): \(.briefing.sectionsCount) sections"' 2>/dev/null
+          echo "$BODY" | jq -r '"Briefing \(.briefing.id) (\(.briefing.type)): \(.briefing.sectionsCount) sections"' 2>/dev/null
           echo "$BODY" | jq -r '"Summary: \(.briefing.executiveSummary)"' 2>/dev/null
