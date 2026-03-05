@@ -8,3 +8,6 @@ if (!apiKey) {
 const genAI = new GoogleGenerativeAI(apiKey || '');
 
 export const geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+
+// Cheap/fast model for relevance gate (Layer 2 filtering)
+export const geminiModelFast = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });

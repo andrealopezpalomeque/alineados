@@ -15,10 +15,17 @@ export interface Article {
   processed?: boolean;
   processedAt?: Timestamp | Date;
 
+  // Filtering metadata
+  filtered?: boolean;
+  filterReason?: string;
+  filterStage?: 'keyword' | 'ai-gate' | 'relevance-none';
+  matchedKeywords?: string[];
+
   // AI-generated fields (from Gemini processing — optional until processed)
   summary?: string;
   category?: ArticleCategory;
   subcategory?: string;
+  relevance?: ArticleRelevance;
   politicalActors?: string[];
   ministryRelevance?: MinistryRelevance[];
   sentiment?: 'positive' | 'negative' | 'neutral';
@@ -45,10 +52,13 @@ export type ArticleCategory =
   | 'national'
   | 'general';
 
+export type ArticleRelevance = 'high' | 'medium' | 'low' | 'none';
+
 export interface ProcessedFields {
   summary: string;
   category: ArticleCategory;
   subcategory?: string;
+  relevance: ArticleRelevance;
   politicalActors: string[];
   ministryRelevance: MinistryRelevance[];
   sentiment: 'positive' | 'neutral' | 'negative';

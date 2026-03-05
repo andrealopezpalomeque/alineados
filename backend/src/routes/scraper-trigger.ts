@@ -3,7 +3,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { db } from '../config/firebase.js';
 import type { BaseScraper, RawArticle } from '../scrapers/base.js';
 import { isDuplicateByTitle } from '../utils/deduplication.js';
-import { processArticle } from '../processors/article-processor.js';
+import { processArticleWithFiltering } from '../processors/article-processor.js';
 
 const router = Router();
 
@@ -121,16 +121,18 @@ router.post('/', async (_req: Request, res: Response) => {
     }
   }
 
-  // Auto-process unprocessed articles (always runs — retries previous failures too)
+  // Auto-process unprocessed articles with 3-layer filtering
   let articlesProcessed = 0;
+  let articlesFiltered = 0;
   let processingErrors = 0;
 
   {
     const unprocessedSnapshot = await db.collection('articles').get();
     const unprocessedDocs = unprocessedSnapshot.docs.filter(doc => {
       const data = doc.data();
-      // Skip already processed
+      // Skip already processed or filtered
       if (data.processed) return false;
+      if (data.filtered) return false;
       // Skip articles that failed 3+ times (avoid infinite retries)
       if (data.processingFailures >= 3) return false;
       return true;
@@ -142,21 +144,46 @@ router.post('/', async (_req: Request, res: Response) => {
       for (const doc of unprocessedDocs) {
         const data = doc.data();
         try {
-          const fields = await processArticle({
+          const result = await processArticleWithFiltering({
             title: data.title as string,
             rawContent: data.rawContent as string,
             source: data.source as string,
             sourceUrl: data.sourceUrl as string,
           });
 
-          await doc.ref.update({
-            ...fields,
-            processed: true,
-            processedAt: Timestamp.now(),
-          });
-
-          articlesProcessed++;
-          console.log(`[scraper-trigger] Processed: ${(data.title as string).substring(0, 60)}`);
+          if (result.filtered) {
+            // Article was filtered out — mark it so we don't reprocess
+            await doc.ref.update({
+              filtered: true,
+              filterStage: result.stage,
+              filterReason: result.reason,
+              matchedKeywords: result.matchedKeywords || [],
+            });
+            articlesFiltered++;
+            console.log(`[scraper-trigger] Filtered (${result.stage}): ${(data.title as string).substring(0, 60)}`);
+          } else {
+            // Check if AI returned relevance "none" — treat as filtered
+            if (result.fields.relevance === 'none') {
+              await doc.ref.update({
+                ...result.fields,
+                processed: true,
+                processedAt: Timestamp.now(),
+                filtered: true,
+                filterStage: 'relevance-none',
+                filterReason: 'AI processing returned relevance: none',
+              });
+              articlesFiltered++;
+              console.log(`[scraper-trigger] Filtered (relevance-none): ${(data.title as string).substring(0, 60)}`);
+            } else {
+              await doc.ref.update({
+                ...result.fields,
+                processed: true,
+                processedAt: Timestamp.now(),
+              });
+              articlesProcessed++;
+              console.log(`[scraper-trigger] Processed: ${(data.title as string).substring(0, 60)}`);
+            }
+          }
         } catch (error) {
           processingErrors++;
           const msg = error instanceof Error ? error.message : String(error);
@@ -173,7 +200,7 @@ router.post('/', async (_req: Request, res: Response) => {
         // Rate limiting
         await new Promise(resolve => setTimeout(resolve, 500));
       }
-      console.log(`[scraper-trigger] Processing complete: ${articlesProcessed} ok, ${processingErrors} errors`);
+      console.log(`[scraper-trigger] Processing complete: ${articlesProcessed} ok, ${articlesFiltered} filtered, ${processingErrors} errors`);
     }
   }
 
@@ -198,6 +225,7 @@ router.post('/', async (_req: Request, res: Response) => {
     results,
     processing: {
       articlesProcessed,
+      articlesFiltered,
       processingErrors,
     },
   });

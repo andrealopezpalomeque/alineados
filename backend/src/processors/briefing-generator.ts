@@ -110,10 +110,12 @@ async function fetchArticlesForRange(start: Date, end: Date): Promise<(Article &
     .orderBy('publishedAt', 'desc')
     .get();
 
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as (Article & { id: string })[];
+  return snapshot.docs
+    .filter(doc => !doc.data().filtered)
+    .map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as (Article & { id: string })[];
 }
 
 function groupByCategory(articles: (Article & { id: string })[]): Record<string, (Article & { id: string })[]> {
