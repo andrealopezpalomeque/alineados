@@ -26,7 +26,8 @@
       "Bash(gh secret:*)",
       "Bash(gh run:*)",
       "Bash(cp:*)",
-      "Bash(yarn nuxt:*)"
+      "Bash(yarn nuxt:*)",
+      "Bash(python3:*)"
     ]
   }
 }

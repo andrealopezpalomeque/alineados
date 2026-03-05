@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../config/firebase.js';
-import { generateBriefing } from '../processors/briefing-generator.js';
+import { generateBriefing, getLastGenerationStatus } from '../processors/briefing-generator.js';
 
 const router = Router();
 
@@ -78,6 +78,16 @@ router.post('/generate', async (req: Request, res: Response) => {
     console.error('[briefings] Error generating briefing:', error);
     res.status(500).json({ error: 'Failed to generate briefing' });
   }
+});
+
+// GET /api/briefings/generate-status — last generation attempt info
+router.get('/generate-status', (_req: Request, res: Response) => {
+  const status = getLastGenerationStatus();
+  if (!status) {
+    res.json({ message: 'No generation attempts since server started.' });
+    return;
+  }
+  res.json(status);
 });
 
 // GET /api/briefings/:date — returns briefing for specific date

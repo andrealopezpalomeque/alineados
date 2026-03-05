@@ -1,7 +1,22 @@
 import { db } from '../config/firebase.js';
 import { geminiModel } from '../config/gemini.js';
 import { Timestamp } from 'firebase-admin/firestore';
-import type { Article } from '../types/index.js';
+import type { Article, ArticleCategory } from '../types/index.js';
+
+const MAX_ARTICLES_PER_CATEGORY = 15;
+
+const URGENCY_ORDER: Record<string, number> = { breaking: 0, important: 1, routine: 2 };
+
+const CATEGORY_SECTION_MAP: Record<string, { title: string; icon: string }> = {
+  governor: { title: 'El Gobernador', icon: '\u{1F3DB}' },
+  justice: { title: 'Justicia y DDHH', icon: '\u2696' },
+  ministry: { title: 'Gabinete', icon: '\u{1F465}' },
+  opposition: { title: 'Oposición', icon: '\u{1F4E2}' },
+  national: { title: 'Nacional', icon: '\u{1F1E6}\u{1F1F7}' },
+  general: { title: 'General', icon: '\u{1F4F0}' },
+};
+
+const SECTION_ORDER: string[] = ['governor', 'justice', 'ministry', 'opposition', 'national', 'general'];
 
 export interface BriefingItem {
   articleId: string;
@@ -25,25 +40,34 @@ export interface Briefing {
   sections: BriefingSection[];
 }
 
+// Track last generation attempt for status endpoint
+let lastGenerationStatus: {
+  date: string;
+  attemptedAt: Date;
+  success: boolean;
+  error?: string;
+  articleCount: number;
+  sectionCount: number;
+} | null = null;
+
+export function getLastGenerationStatus() {
+  return lastGenerationStatus;
+}
+
 function getARTDayBoundaries(date: Date): { start: Date; end: Date } {
-  // ART = UTC-3. Get the start/end of the given day in ART.
   const year = date.getFullYear();
   const month = date.getMonth();
   const day = date.getDate();
 
-  // Start of day in ART (00:00:00 ART = 03:00:00 UTC)
   const start = new Date(Date.UTC(year, month, day, 3, 0, 0, 0));
-  // End of day in ART (23:59:59.999 ART = next day 02:59:59.999 UTC)
   const end = new Date(Date.UTC(year, month, day + 1, 2, 59, 59, 999));
 
   return { start, end };
 }
 
 function getYesterdayART(): Date {
-  // "Now" in ART: subtract 3 hours from UTC to get ART wall-clock
   const now = new Date();
   const artNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-  // Yesterday in ART
   artNow.setDate(artNow.getDate() - 1);
   return artNow;
 }
@@ -71,47 +95,37 @@ async function fetchArticlesForDate(date: Date): Promise<(Article & { id: string
   })) as (Article & { id: string })[];
 }
 
-function buildBriefingPrompt(articles: (Article & { id: string })[]): string {
-  const articlesJson = articles.map(a => ({
-    id: a.id,
-    title: a.title,
-    source: a.source,
-    category: a.category,
-    summary: a.summary,
-    urgency: a.urgency,
-    politicalActors: a.politicalActors,
-    keyQuotes: a.keyQuotes,
-    publishedAt: a.publishedAt,
-  }));
+function groupByCategory(articles: (Article & { id: string })[]): Record<string, (Article & { id: string })[]> {
+  const groups: Record<string, (Article & { id: string })[]> = {};
 
-  return `You are preparing the morning briefing for the Minister of Justice and Human Rights of Corrientes Province, Argentina.
-Governor: Juan Pablo Valdés (Vamos Corrientes / UCR coalition, sworn in Dec 2025).
-Minister reading this: Juan José López Desimoni (Justice & Human Rights).
+  for (const article of articles) {
+    const cat = article.category || 'general';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(article);
+  }
 
-From today's processed articles, create a JSON response with:
-1. "executiveSummary": 3-5 sentence overview of the political day. What matters most? Lead with the most important development.
-2. "sections": array of objects, each with:
-   - "title": section name
-   - "icon": emoji
-   - "items": array of {articleId, headline, summary (1-2 sentences focused on political relevance), urgency (breaking/important/routine), source, time}
+  // Sort each group: breaking first, then important, then routine, then by most recent
+  for (const cat of Object.keys(groups)) {
+    groups[cat].sort((a, b) => {
+      const urgA = URGENCY_ORDER[a.urgency || 'routine'] ?? 2;
+      const urgB = URGENCY_ORDER[b.urgency || 'routine'] ?? 2;
+      if (urgA !== urgB) return urgA - urgB;
 
-Sections should be in this order:
-- "El Gobernador" (icon: 🏛) — What Governor Valdés did/said
-- "Justicia y DDHH" (icon: ⚖) — Courts, justice policy, human rights
-- "Gabinete" (icon: 👥) — Other ministers' public activity
-- "Oposición" (icon: 📢) — Opposition statements and activity
-- "Nacional" (icon: 🇦🇷) — National news affecting the province
+      const timeA = a.publishedAt instanceof Date ? a.publishedAt.getTime() : 0;
+      const timeB = b.publishedAt instanceof Date ? b.publishedAt.getTime() : 0;
+      return timeB - timeA;
+    });
 
-Only include sections that have content. Skip empty sections.
-Prioritize: breaking > important > routine within each section.
-Be concise and factual. No editorializing. Use formal tone (title + surname for political figures).
-Respond ONLY with valid JSON, no markdown fences, no preamble.
+    // Cap at MAX_ARTICLES_PER_CATEGORY
+    if (groups[cat].length > MAX_ARTICLES_PER_CATEGORY) {
+      groups[cat] = groups[cat].slice(0, MAX_ARTICLES_PER_CATEGORY);
+    }
+  }
 
-Articles to analyze:
-${JSON.stringify(articlesJson, null, 2)}`;
+  return groups;
 }
 
-function parseGeminiResponse(text: string): { executiveSummary: string; sections: BriefingSection[] } {
+function parseJsonResponse<T>(text: string): T {
   try {
     return JSON.parse(text);
   } catch {
@@ -125,8 +139,97 @@ function parseGeminiResponse(text: string): { executiveSummary: string; sections
       return JSON.parse(jsonMatch[0]);
     }
 
-    throw new Error(`Could not parse JSON from Gemini response: ${text.substring(0, 200)}`);
+    throw new Error(`Could not parse JSON: ${text.substring(0, 200)}`);
   }
+}
+
+async function callGeminiWithRetry<T>(prompt: string, label: string): Promise<T> {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const result = await geminiModel.generateContent(prompt);
+      const responseText = result.response.text();
+      return parseJsonResponse<T>(responseText);
+    } catch (error) {
+      if (attempt >= 2) {
+        console.error(`[briefing] ${label}: failed after ${attempt} attempts:`, error);
+        throw error;
+      }
+      console.warn(`[briefing] ${label}: attempt ${attempt} failed, retrying in 3s...`);
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+  }
+  throw new Error('Unreachable');
+}
+
+// PASS 1: Summarize each category separately
+async function summarizeCategory(
+  category: string,
+  articles: (Article & { id: string })[],
+): Promise<BriefingItem[]> {
+  const categoryName = CATEGORY_SECTION_MAP[category]?.title || category;
+  console.log(`[briefing] Processing category: ${category} (${articles.length} articles)...`);
+
+  const articlesJson = articles.map(a => ({
+    id: a.id,
+    title: a.title,
+    source: a.source,
+    summary: a.summary,
+    urgency: a.urgency,
+    politicalActors: a.politicalActors,
+    keyQuotes: a.keyQuotes,
+    publishedAt: a.publishedAt,
+  }));
+
+  const prompt = `You are a political analyst for Corrientes Province, Argentina. Governor: Juan Pablo Valdés (UCR).
+From these articles in the "${categoryName}" category, select the 3-5 most politically relevant items for the Minister of Justice and Human Rights.
+For each selected item return: { articleId, headline, summary (1-2 sentences, factual, formal tone), urgency (breaking/important/routine), source, time }
+Respond ONLY with valid JSON: { "items": [...] }
+
+Articles:
+${JSON.stringify(articlesJson, null, 2)}`;
+
+  const result = await callGeminiWithRetry<{ items: BriefingItem[] }>(prompt, `category:${category}`);
+  const items = Array.isArray(result.items) ? result.items : [];
+  console.log(`[briefing] Category ${category}: selected ${items.length} items`);
+  return items;
+}
+
+// PASS 2: Generate executive summary and final section ordering
+async function generateExecutiveSummary(
+  selectedByCategory: Record<string, BriefingItem[]>,
+): Promise<{ executiveSummary: string; sections: BriefingSection[] }> {
+  console.log('[briefing] Pass 2: generating executive summary...');
+
+  const selectedItemsJson: Record<string, BriefingItem[]> = {};
+  for (const cat of SECTION_ORDER) {
+    if (selectedByCategory[cat]?.length) {
+      const sectionInfo = CATEGORY_SECTION_MAP[cat];
+      selectedItemsJson[sectionInfo.title] = selectedByCategory[cat];
+    }
+  }
+
+  const prompt = `You are preparing the morning briefing for the Minister of Justice and Human Rights of Corrientes Province, Argentina.
+Governor: Juan Pablo Valdés (Vamos Corrientes / UCR coalition, sworn in Dec 2025).
+
+From these pre-selected items, generate:
+1. "executiveSummary": 3-5 sentence overview of the political day. Lead with the most important development.
+2. "sections": repackage the items into sections in this order:
+   - "El Gobernador" (icon: 🏛)
+   - "Justicia y DDHH" (icon: ⚖)
+   - "Gabinete" (icon: 👥)
+   - "Oposición" (icon: 📢)
+   - "Nacional" (icon: 🇦🇷)
+   - "General" (icon: 📰) — only if there are general items
+Only include sections that have items. Sort items within each section: breaking first, then important, then routine.
+Respond ONLY with valid JSON, no markdown fences.
+
+Selected items by category:
+${JSON.stringify(selectedItemsJson, null, 2)}`;
+
+  return callGeminiWithRetry<{ executiveSummary: string; sections: BriefingSection[] }>(
+    prompt,
+    'executive-summary',
+  );
 }
 
 export async function generateBriefing(targetDate?: Date): Promise<Briefing> {
@@ -148,48 +251,105 @@ export async function generateBriefing(targetDate?: Date): Promise<Briefing> {
 
     await db.collection('dailyBriefings').doc(dateId).set(briefing);
     console.log(`[briefing] Stored empty briefing for ${dateId}`);
+
+    lastGenerationStatus = {
+      date: dateId,
+      attemptedAt: new Date(),
+      success: true,
+      articleCount: 0,
+      sectionCount: 0,
+    };
+
     return briefing;
   }
 
-  const prompt = buildBriefingPrompt(articles);
+  try {
+    // Group articles by category
+    const groups = groupByCategory(articles);
+    const categories = Object.keys(groups).filter(cat => groups[cat].length > 0);
+    console.log(`[briefing] Categories with articles: ${categories.join(', ')}`);
 
-  let parsed: { executiveSummary: string; sections: BriefingSection[] };
-  let attempts = 0;
-
-  while (true) {
-    attempts++;
-    try {
-      const result = await geminiModel.generateContent(prompt);
-      const responseText = result.response.text();
-      parsed = parseGeminiResponse(responseText);
-      break;
-    } catch (error) {
-      if (attempts >= 2) {
-        console.error(`[briefing] Gemini failed after ${attempts} attempts:`, error);
-        // Store partial briefing
-        const partialBriefing: Briefing = {
-          id: dateId,
-          generatedAt: Timestamp.now(),
-          executiveSummary: `Error al generar el briefing. Se encontraron ${articles.length} artículos pero el procesamiento falló.`,
-          sections: [],
-        };
-        await db.collection('dailyBriefings').doc(dateId).set(partialBriefing);
-        console.log(`[briefing] Stored partial (error) briefing for ${dateId}`);
-        return partialBriefing;
+    // PASS 1: Summarize each category in parallel
+    const categoryResults: Record<string, BriefingItem[]> = {};
+    const categoryPromises = categories.map(async (cat) => {
+      try {
+        const items = await summarizeCategory(cat, groups[cat]);
+        categoryResults[cat] = items;
+      } catch (error) {
+        console.error(`[briefing] Failed to process category ${cat}:`, error);
+        categoryResults[cat] = [];
       }
-      console.warn(`[briefing] Gemini attempt ${attempts} failed, retrying...`, error);
+    });
+
+    await Promise.all(categoryPromises);
+
+    const totalSelected = Object.values(categoryResults).reduce((sum, items) => sum + items.length, 0);
+    console.log(`[briefing] Pass 1 complete: ${totalSelected} items selected across ${categories.length} categories`);
+
+    if (totalSelected === 0) {
+      const briefing: Briefing = {
+        id: dateId,
+        generatedAt: Timestamp.now(),
+        executiveSummary: 'No se identificaron noticias de relevancia política.',
+        sections: [],
+      };
+
+      await db.collection('dailyBriefings').doc(dateId).set(briefing);
+
+      lastGenerationStatus = {
+        date: dateId,
+        attemptedAt: new Date(),
+        success: true,
+        articleCount: articles.length,
+        sectionCount: 0,
+      };
+
+      return briefing;
     }
+
+    // PASS 2: Executive summary + final sections
+    const parsed = await generateExecutiveSummary(categoryResults);
+
+    const briefing: Briefing = {
+      id: dateId,
+      generatedAt: Timestamp.now(),
+      executiveSummary: parsed.executiveSummary || '',
+      sections: Array.isArray(parsed.sections) ? parsed.sections : [],
+    };
+
+    await db.collection('dailyBriefings').doc(dateId).set(briefing);
+    console.log(`[briefing] Stored briefing for ${dateId} with ${briefing.sections.length} sections`);
+
+    lastGenerationStatus = {
+      date: dateId,
+      attemptedAt: new Date(),
+      success: true,
+      articleCount: articles.length,
+      sectionCount: briefing.sections.length,
+    };
+
+    return briefing;
+  } catch (error) {
+    console.error(`[briefing] Generation failed for ${dateId}:`, error);
+
+    const partialBriefing: Briefing = {
+      id: dateId,
+      generatedAt: Timestamp.now(),
+      executiveSummary: `Error al generar el briefing. Se encontraron ${articles.length} artículos pero el procesamiento falló.`,
+      sections: [],
+    };
+
+    await db.collection('dailyBriefings').doc(dateId).set(partialBriefing);
+
+    lastGenerationStatus = {
+      date: dateId,
+      attemptedAt: new Date(),
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      articleCount: articles.length,
+      sectionCount: 0,
+    };
+
+    return partialBriefing;
   }
-
-  const briefing: Briefing = {
-    id: dateId,
-    generatedAt: Timestamp.now(),
-    executiveSummary: parsed.executiveSummary || '',
-    sections: Array.isArray(parsed.sections) ? parsed.sections : [],
-  };
-
-  await db.collection('dailyBriefings').doc(dateId).set(briefing);
-  console.log(`[briefing] Stored briefing for ${dateId} with ${briefing.sections.length} sections`);
-
-  return briefing;
 }
