@@ -1,0 +1,40 @@
+name: Daily Briefing
+
+on:
+  schedule:
+    # 09:00 UTC = 06:00 ART (Argentina time)
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  generate-briefing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake up Render backend
+        run: |
+          echo "Pinging backend to wake from sleep..."
+          curl -sf --max-time 120 "${{ secrets.BACKEND_URL }}/health" || true
+          echo "Waiting for backend to fully start..."
+          sleep 10
+
+      - name: Generate daily briefing
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.BACKEND_URL }}/api/briefings/generate" \
+            -H "Content-Type: application/json" \
+            --max-time 120)
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "HTTP Status: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Briefing generation failed with status $HTTP_CODE"
+            echo "Response: $BODY"
+            exit 1
+          fi
+
+          echo "$BODY" | jq -r '"Briefing \(.briefing.id): \(.briefing.sectionsCount) sections"' 2>/dev/null
+          echo "$BODY" | jq -r '"Summary: \(.briefing.executiveSummary)"' 2>/dev/null

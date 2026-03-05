@@ -11,6 +11,7 @@ import articlesRouter from './routes/articles.js';
 import scraperTriggerRouter, { registerScraper } from './routes/scraper-trigger.js';
 import processRouter from './routes/process.js';
 import cleanupRouter from './routes/cleanup.js';
+import briefingsRouter from './routes/briefings.js';
 import { RadioDosScraper } from './scrapers/radio-dos.js';
 import { RadioSudamericanaScraper } from './scrapers/radio-sudamericana.js';
 
@@ -34,6 +35,7 @@ app.use('/api/articles', articlesRouter);
 app.use('/api/scrape', scraperTriggerRouter);
 app.use('/api/process', processRouter);
 app.use('/api/cleanup', cleanupRouter);
+app.use('/api/briefings', briefingsRouter);
 
 app.listen(PORT, () => {
   console.log(`Alineados backend running on port ${PORT}`);
