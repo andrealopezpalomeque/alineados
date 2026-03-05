@@ -138,4 +138,32 @@ router.delete('/reset', async (_req: Request, res: Response) => {
   }
 });
 
+// POST /api/process/retry — reset processingFailures so failed articles get retried
+router.post('/retry', async (_req: Request, res: Response) => {
+  try {
+    const snapshot = await db.collection('articles').get();
+    const failedDocs = snapshot.docs.filter(doc => {
+      const data = doc.data();
+      return !data.processed && !data.filtered && (data.processingFailures || 0) > 0;
+    });
+
+    const batchSize = 500;
+    let reset = 0;
+
+    for (let i = 0; i < failedDocs.length; i += batchSize) {
+      const batch = db.batch();
+      const chunk = failedDocs.slice(i, i + batchSize);
+      chunk.forEach(doc => batch.update(doc.ref, { processingFailures: 0, lastProcessingError: null }));
+      await batch.commit();
+      reset += chunk.length;
+    }
+
+    res.json({ success: true, reset });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[process/retry] Error:', msg);
+    res.status(500).json({ error: msg });
+  }
+});
+
 export default router;
