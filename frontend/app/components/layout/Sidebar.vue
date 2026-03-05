@@ -31,7 +31,7 @@ function isActive(to: string) {
         <img src="/logos/logo-icon-dark.svg" alt="Alineados" class="h-10 w-10 shrink-0" />
         <div v-if="uiStore.sidebarOpen" class="min-w-0">
           <p class="truncate font-display text-lg font-bold text-white">Alineados</p>
-          <p class="truncate text-xs text-slate-400">Inteligencia política</p>
+          <p class="truncate text-[0.6rem] font-medium uppercase tracking-[0.15em] text-slate-400">Inteligencia Politica</p>
         </div>
       </div>
 
