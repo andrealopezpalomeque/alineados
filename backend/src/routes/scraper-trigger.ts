@@ -197,8 +197,8 @@ router.post('/', async (_req: Request, res: Response) => {
           });
         }
 
-        // Rate limiting
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Rate limiting (2 Gemini calls per article: gate + full processing)
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
       console.log(`[scraper-trigger] Processing complete: ${articlesProcessed} ok, ${articlesFiltered} filtered, ${processingErrors} errors`);
     }
