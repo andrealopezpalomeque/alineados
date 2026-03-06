@@ -157,7 +157,9 @@ function formatLastUpdate(date: Date | null): string {
       <div
         class="relative overflow-hidden rounded-2xl p-8"
         :style="{
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f2438 100%)',
+          background: activeType === 'recap'
+            ? 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e3a5f 100%)'
+            : 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f2438 100%)',
         }"
       >
         <div class="absolute inset-0 opacity-[0.05] hero-pattern" />
