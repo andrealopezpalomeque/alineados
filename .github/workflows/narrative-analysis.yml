@@ -1,0 +1,41 @@
+name: Weekly Narrative Analysis
+
+on:
+  schedule:
+    # Monday 02:00 UTC = Sunday 23:00 ART (after weekly-archive runs Sunday 03:00 UTC)
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+jobs:
+  generate-narrative:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Wake up Render backend
+        run: |
+          echo "Pinging backend to wake from sleep..."
+          curl -sf --max-time 120 "${{ secrets.BACKEND_URL }}/health" || true
+          echo "Waiting for backend to fully start..."
+          sleep 10
+
+      - name: Generate narrative analysis
+        run: |
+          echo "Generating weekly narrative analysis..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.BACKEND_URL }}/api/narrative/generate" \
+            -H "Content-Type: application/json" \
+            --max-time 300)
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "HTTP Status: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Narrative analysis failed with status $HTTP_CODE"
+            echo "Response: $BODY"
+            exit 1
+          fi
+
+          echo "$BODY" | jq -r '"Report \(.report.id): \(.report.themesCount) themes, \(.report.timelineCount) timeline events"' 2>/dev/null
+          echo "$BODY" | jq -r '"Summary: \(.report.executiveSummary)"' 2>/dev/null
