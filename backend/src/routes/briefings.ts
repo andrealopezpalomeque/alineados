@@ -43,14 +43,22 @@ router.get('/latest', async (_req: Request, res: Response) => {
     const yD = String(yesterdayArt.getUTCDate()).padStart(2, '0');
     const yesterdayDate = `${yY}-${yM}-${yD}`;
 
-    const [middayDoc, recapDoc] = await Promise.all([
+    const [todayMiddayDoc, yesterdayRecapDoc, yesterdayMiddayDoc] = await Promise.all([
       db.collection('dailyBriefings').doc(`${todayDate}-midday`).get(),
       db.collection('dailyBriefings').doc(`${yesterdayDate}-recap`).get(),
+      db.collection('dailyBriefings').doc(`${yesterdayDate}-midday`).get(),
     ]);
 
+    // latestUpdate: today's midday if available, otherwise yesterday's midday
+    const latestUpdate = todayMiddayDoc.exists
+      ? { id: todayMiddayDoc.id, ...todayMiddayDoc.data() }
+      : yesterdayMiddayDoc.exists
+        ? { id: yesterdayMiddayDoc.id, ...yesterdayMiddayDoc.data() }
+        : null;
+
     res.json({
-      latestUpdate: middayDoc.exists ? { id: middayDoc.id, ...middayDoc.data() } : null,
-      yesterdayRecap: recapDoc.exists ? { id: recapDoc.id, ...recapDoc.data() } : null,
+      latestUpdate,
+      yesterdayRecap: yesterdayRecapDoc.exists ? { id: yesterdayRecapDoc.id, ...yesterdayRecapDoc.data() } : null,
       todayDate,
       yesterdayDate,
     });
