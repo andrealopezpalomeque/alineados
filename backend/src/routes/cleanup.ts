@@ -8,6 +8,7 @@ const RETENTION_DAYS = 90;
 const BATCH_SIZE = 100;
 
 // DELETE /api/cleanup — remove articles older than 90 days
+// NOTE: Only affects 'articles' collection. 'narrativeAnalysis' and 'dailyBriefings' are NEVER deleted.
 router.delete('/', async (_req: Request, res: Response) => {
   try {
     const cutoff = new Date();
@@ -46,23 +47,16 @@ router.delete('/', async (_req: Request, res: Response) => {
   }
 });
 
-// POST /api/cleanup/archive-week — mark articles older than last Monday as archived
+// POST /api/cleanup/archive-week — mark articles older than 30 days as archived
+// NOTE: This route ONLY affects the 'articles' collection.
+// The 'narrativeAnalysis' and 'dailyBriefings' collections are NEVER modified by cleanup.
 router.post('/archive-week', async (_req: Request, res: Response) => {
   try {
-    // Compute last Monday 00:00 ART (UTC-3)
-    const now = new Date();
-    const artNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-    const dayOfWeek = artNow.getUTCDay(); // 0=Sun, 1=Mon
-    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    const lastMonday = new Date(Date.UTC(
-      artNow.getUTCFullYear(),
-      artNow.getUTCMonth(),
-      artNow.getUTCDate() - daysSinceMonday,
-      3, 0, 0, 0, // 00:00 ART = 03:00 UTC
-    ));
-
-    const cutoffTimestamp = Timestamp.fromDate(lastMonday);
-    console.log(`[cleanup] Archiving articles before ${lastMonday.toISOString()}`);
+    const ARCHIVE_DAYS = 30;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - ARCHIVE_DAYS);
+    const cutoffTimestamp = Timestamp.fromDate(cutoff);
+    console.log(`[cleanup] Archiving articles older than ${ARCHIVE_DAYS} days (before ${cutoff.toISOString()})`);
 
     let totalArchived = 0;
     let hasMore = true;
