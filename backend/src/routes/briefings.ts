@@ -26,37 +26,34 @@ router.get('/today', async (_req: Request, res: Response) => {
   }
 });
 
-// GET /api/briefings/latest — smart: midday if available for today, otherwise most recent recap
+// GET /api/briefings/latest — returns today's latest update + yesterday's recap
 router.get('/latest', async (_req: Request, res: Response) => {
   try {
-    // Get today's date in ART
     const now = new Date();
     const artNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-    const y = artNow.getUTCFullYear();
-    const m = String(artNow.getUTCMonth() + 1).padStart(2, '0');
-    const d = String(artNow.getUTCDate()).padStart(2, '0');
-    const todayId = `${y}-${m}-${d}`;
 
-    // Try today's midday first
-    const middayDoc = await db.collection('dailyBriefings').doc(`${todayId}-midday`).get();
-    if (middayDoc.exists) {
-      res.json({ id: middayDoc.id, ...middayDoc.data() });
-      return;
-    }
+    const todayY = artNow.getUTCFullYear();
+    const todayM = String(artNow.getUTCMonth() + 1).padStart(2, '0');
+    const todayD = String(artNow.getUTCDate()).padStart(2, '0');
+    const todayDate = `${todayY}-${todayM}-${todayD}`;
 
-    // Fall back to most recent briefing
-    const snapshot = await db.collection('dailyBriefings')
-      .orderBy('generatedAt', 'desc')
-      .limit(1)
-      .get();
+    const yesterdayArt = new Date(artNow.getTime() - 24 * 60 * 60 * 1000);
+    const yY = yesterdayArt.getUTCFullYear();
+    const yM = String(yesterdayArt.getUTCMonth() + 1).padStart(2, '0');
+    const yD = String(yesterdayArt.getUTCDate()).padStart(2, '0');
+    const yesterdayDate = `${yY}-${yM}-${yD}`;
 
-    if (snapshot.empty) {
-      res.status(404).json({ error: 'No briefings found' });
-      return;
-    }
+    const [middayDoc, recapDoc] = await Promise.all([
+      db.collection('dailyBriefings').doc(`${todayDate}-midday`).get(),
+      db.collection('dailyBriefings').doc(`${yesterdayDate}-recap`).get(),
+    ]);
 
-    const doc = snapshot.docs[0];
-    res.json({ id: doc.id, ...doc.data() });
+    res.json({
+      latestUpdate: middayDoc.exists ? { id: middayDoc.id, ...middayDoc.data() } : null,
+      yesterdayRecap: recapDoc.exists ? { id: recapDoc.id, ...recapDoc.data() } : null,
+      todayDate,
+      yesterdayDate,
+    });
   } catch (error) {
     console.error('[briefings] Error fetching latest briefing:', error);
     res.status(500).json({ error: 'Failed to fetch briefing' });

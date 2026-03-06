@@ -1,11 +1,6 @@
 name: Daily Briefing
 
 on:
-  schedule:
-    # 09:00 UTC = 06:00 ART — morning recap of yesterday
-    - cron: '0 9 * * *'
-    # 21:00 UTC = 18:00 ART — midday update of today so far
-    - cron: '0 21 * * *'
   workflow_dispatch:
     inputs:
       type:

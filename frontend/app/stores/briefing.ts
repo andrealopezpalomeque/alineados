@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
-import type { Briefing, BriefingType, DateBriefings } from '~/types/briefing'
+import type { Briefing, BriefingType, LatestBriefingsResponse } from '~/types/briefing'
 
 export const useBriefingStore = defineStore('briefing', () => {
   const recap = ref<Briefing | null>(null)
   const midday = ref<Briefing | null>(null)
-  const activeType = ref<BriefingType>('recap')
+  const activeType = ref<BriefingType>('midday')
   const loading = ref(false)
   const error = ref<string | null>(null)
   const lastFetchedAt = ref<Date | null>(null)
@@ -51,43 +51,10 @@ export const useBriefingStore = defineStore('briefing', () => {
     error.value = null
 
     try {
-      // Get the most recent briefing to determine which date to query
-      const latest = await $fetch<Briefing>(`${apiBase}/api/briefings/today`).catch(() => null)
+      const response = await $fetch<LatestBriefingsResponse>(`${apiBase}/api/briefings/latest`)
 
-      if (!latest) {
-        recap.value = null
-        midday.value = null
-        lastFetchedAt.value = new Date()
-        return
-      }
-
-      // Extract date from briefing id (format: YYYY-MM-DD-type or YYYY-MM-DD)
-      const dateMatch = latest.id.match(/^(\d{4}-\d{2}-\d{2})/)
-      if (!dateMatch) {
-        // Legacy format or unexpected — just show it as recap
-        recap.value = { ...latest, type: latest.type || 'recap' }
-        midday.value = null
-        pickDefaultType()
-        lastFetchedAt.value = new Date()
-        return
-      }
-
-      const dateStr = dateMatch[1]
-
-      // Fetch both briefings for this date
-      const dateBriefings = await $fetch<DateBriefings>(`${apiBase}/api/briefings/${dateStr}`).catch(() => null)
-
-      if (dateBriefings) {
-        recap.value = dateBriefings.recap || null
-        midday.value = dateBriefings.midday || null
-      } else {
-        // Fallback: use the latest as-is
-        if (latest.type === 'midday') {
-          midday.value = latest
-        } else {
-          recap.value = { ...latest, type: latest.type || 'recap' }
-        }
-      }
+      midday.value = response.latestUpdate || null
+      recap.value = response.yesterdayRecap || null
 
       pickDefaultType()
       lastFetchedAt.value = new Date()

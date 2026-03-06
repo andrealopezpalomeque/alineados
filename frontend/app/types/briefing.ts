@@ -19,6 +19,7 @@ export interface Briefing {
   id: string
   type: BriefingType
   generatedAt: string | { _seconds: number; _nanoseconds: number }
+  updatedAt?: string | { _seconds: number; _nanoseconds: number }
   executiveSummary: string
   sections: BriefingSection[]
 }
@@ -26,4 +27,11 @@ export interface Briefing {
 export interface DateBriefings {
   recap?: Briefing
   midday?: Briefing
+}
+
+export interface LatestBriefingsResponse {
+  latestUpdate: Briefing | null
+  yesterdayRecap: Briefing | null
+  todayDate: string
+  yesterdayDate: string
 }

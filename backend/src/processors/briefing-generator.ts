@@ -39,6 +39,7 @@ export interface Briefing {
   id: string;
   type: BriefingType;
   generatedAt: Timestamp;
+  updatedAt?: Timestamp;
   executiveSummary: string;
   sections: BriefingSection[];
 }
@@ -111,7 +112,7 @@ async function fetchArticlesForRange(start: Date, end: Date): Promise<(Article &
     .get();
 
   return snapshot.docs
-    .filter(doc => !doc.data().filtered)
+    .filter(doc => !doc.data().filtered && !doc.data().archived)
     .map(doc => ({
       id: doc.id,
       ...doc.data(),
@@ -307,10 +308,15 @@ export async function generateBriefing(options?: GenerateBriefingOptions): Promi
   console.log(`[briefing] Found ${articles.length} processed articles for ${dateId} (${type})`);
 
   if (articles.length === 0) {
+    const now = Timestamp.now();
+    const existingDoc = await db.collection('dailyBriefings').doc(briefingId).get();
+    const generatedAt = existingDoc.exists ? existingDoc.data()!.generatedAt : now;
+
     const briefing: Briefing = {
       id: briefingId,
       type,
-      generatedAt: Timestamp.now(),
+      generatedAt,
+      updatedAt: now,
       executiveSummary: type === 'midday'
         ? `No se registraron noticias relevantes hasta el momento. Actualizado a las ${formatARTTime(new Date())}.`
         : 'No se registraron noticias relevantes.',
@@ -355,10 +361,15 @@ export async function generateBriefing(options?: GenerateBriefingOptions): Promi
     console.log(`[briefing] Pass 1 complete: ${totalSelected} items selected across ${categories.length} categories`);
 
     if (totalSelected === 0) {
+      const now = Timestamp.now();
+      const existingDoc = await db.collection('dailyBriefings').doc(briefingId).get();
+      const generatedAt = existingDoc.exists ? existingDoc.data()!.generatedAt : now;
+
       const briefing: Briefing = {
         id: briefingId,
         type,
-        generatedAt: Timestamp.now(),
+        generatedAt,
+        updatedAt: now,
         executiveSummary: 'No se identificaron noticias de relevancia política.',
         sections: [],
       };
@@ -381,10 +392,15 @@ export async function generateBriefing(options?: GenerateBriefingOptions): Promi
     const updateTime = type === 'midday' ? formatARTTime(new Date()) : undefined;
     const parsed = await generateExecutiveSummary(categoryResults, type, updateTime);
 
+    const now = Timestamp.now();
+    const existingDoc = await db.collection('dailyBriefings').doc(briefingId).get();
+    const generatedAt = existingDoc.exists ? existingDoc.data()!.generatedAt : now;
+
     const briefing: Briefing = {
       id: briefingId,
       type,
-      generatedAt: Timestamp.now(),
+      generatedAt,
+      updatedAt: now,
       executiveSummary: parsed.executiveSummary || '',
       sections: Array.isArray(parsed.sections) ? parsed.sections : [],
     };
@@ -405,10 +421,15 @@ export async function generateBriefing(options?: GenerateBriefingOptions): Promi
   } catch (error) {
     console.error(`[briefing] Generation failed for ${briefingId}:`, error);
 
+    const now = Timestamp.now();
+    const existingDoc = await db.collection('dailyBriefings').doc(briefingId).get();
+    const generatedAt = existingDoc.exists ? existingDoc.data()!.generatedAt : now;
+
     const partialBriefing: Briefing = {
       id: briefingId,
       type,
-      generatedAt: Timestamp.now(),
+      generatedAt,
+      updatedAt: now,
       executiveSummary: `Error al generar el briefing. Se encontraron ${articles.length} artículos pero el procesamiento falló.`,
       sections: [],
     };

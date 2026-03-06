@@ -93,6 +93,7 @@ router.post('/', async (_req: Request, res: Response) => {
             rawContent: article.rawContent,
             publishedAt: Timestamp.fromDate(article.publishedAt),
             scrapedAt: Timestamp.now(),
+            archived: false,
           });
 
           // Track newly added for dedup within same batch

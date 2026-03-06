@@ -1,0 +1,40 @@
+name: Weekly Archive
+
+on:
+  schedule:
+    # Sunday 03:00 UTC = midnight ART
+    - cron: '0 3 * * 0'
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake up Render backend
+        run: |
+          echo "Pinging backend to wake from sleep..."
+          curl -sf --max-time 120 "${{ secrets.BACKEND_URL }}/health" || true
+          echo "Waiting for backend to fully start..."
+          sleep 10
+
+      - name: Archive old articles
+        run: |
+          echo "Archiving articles from previous weeks..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.BACKEND_URL }}/api/cleanup/archive-week" \
+            -H "Content-Type: application/json" \
+            --max-time 120)
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "HTTP Status: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Archive failed with status $HTTP_CODE"
+            echo "Response: $BODY"
+            exit 1
+          fi
+
+          echo "$BODY" | jq -r '"Archived: \(.archived) articles, Legacy: \(.legacyArchived) articles"' 2>/dev/null

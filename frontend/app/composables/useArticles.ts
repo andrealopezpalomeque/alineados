@@ -57,6 +57,7 @@ export function useArticles(defaultFilters?: ArticleFilters) {
   function buildQuery(isLoadMore = false) {
     const constraints: QueryConstraint[] = [
       where('processed', '==', true),
+      where('archived', '==', false),
       orderBy('publishedAt', 'desc'),
     ]
 

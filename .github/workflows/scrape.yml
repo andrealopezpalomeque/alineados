@@ -38,3 +38,54 @@ jobs:
 
           echo "$BODY" | jq -r '.results | to_entries[] | "\(.key): \(.value.found) found, \(.value.new) new, \(.value.duplicates) dupes"' 2>/dev/null
           echo "$BODY" | jq -r '"Processing: \(.processing.articlesProcessed) ok, \(.processing.processingErrors) errors"' 2>/dev/null
+
+      - name: Check if 6 AM ART run (09 UTC)
+        id: check-time
+        run: |
+          HOUR=$(date -u +%H)
+          echo "Current UTC hour: $HOUR"
+          if [ "$HOUR" = "09" ]; then
+            echo "is_morning=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_morning=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate midday briefing
+        run: |
+          echo "Generating midday briefing after scrape..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.BACKEND_URL }}/api/briefings/generate" \
+            -H "Content-Type: application/json" \
+            -d '{"type": "midday"}' \
+            --max-time 180)
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "HTTP Status: $HTTP_CODE"
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::warning::Midday briefing generation failed with status $HTTP_CODE"
+            echo "Response: $BODY"
+          else
+            echo "$BODY" | jq -r '"Briefing \(.briefing.id) (\(.briefing.type)): \(.briefing.sectionsCount) sections"' 2>/dev/null
+          fi
+
+      - name: Generate recap (6 AM ART only)
+        if: steps.check-time.outputs.is_morning == 'true'
+        run: |
+          echo "Generating recap briefing (6 AM ART run)..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.BACKEND_URL }}/api/briefings/generate" \
+            -H "Content-Type: application/json" \
+            -d '{"type": "recap"}' \
+            --max-time 180)
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "HTTP Status: $HTTP_CODE"
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::warning::Recap generation failed with status $HTTP_CODE"
+          else
+            echo "$BODY" | jq -r '"Briefing \(.briefing.id) (\(.briefing.type)): \(.briefing.sectionsCount) sections"' 2>/dev/null
+          fi

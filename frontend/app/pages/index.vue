@@ -35,15 +35,16 @@ const heroSubtitle = computed(() => {
   if (!briefing.value) return ''
   const dateStr = formatSpanishDate(briefing.value.generatedAt)
   if (briefing.value.type === 'midday') {
-    const time = formatARTTime(briefing.value.generatedAt)
-    return `Avance del dia — ${dateStr} · Actualizado ${time}`
+    const timeSource = briefing.value.updatedAt || briefing.value.generatedAt
+    const time = formatARTTime(timeSource)
+    return `${dateStr} · Actualizado ${time}`
   }
-  return `Resumen del dia — ${dateStr}`
+  return dateStr
 })
 
 const heroTitle = computed(() => {
-  if (!briefing.value) return 'Resumen del Dia'
-  return briefing.value.type === 'midday' ? 'Avance del Dia' : 'Resumen del Dia'
+  if (!briefing.value) return 'Ultima Actualizacion'
+  return briefing.value.type === 'midday' ? 'Ultima Actualizacion' : 'Resumen de Ayer'
 })
 
 function formatLastUpdate(date: Date | null): string {
@@ -179,8 +180,17 @@ function formatLastUpdate(date: Date | null): string {
         </div>
       </div>
 
-      <!-- Recap / Midday toggle -->
+      <!-- Latest update / Yesterday recap toggle -->
       <div v-if="hasBoth" class="flex gap-2">
+        <button
+          class="rounded-full px-4 py-1.5 text-sm font-semibold font-body transition-colors"
+          :class="activeType === 'midday'
+            ? 'bg-slate-800 text-white'
+            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+          @click="setActiveType('midday')"
+        >
+          Ultima actualizacion
+        </button>
         <button
           class="rounded-full px-4 py-1.5 text-sm font-semibold font-body transition-colors"
           :class="activeType === 'recap'
@@ -189,15 +199,6 @@ function formatLastUpdate(date: Date | null): string {
           @click="setActiveType('recap')"
         >
           Resumen de ayer
-        </button>
-        <button
-          class="rounded-full px-4 py-1.5 text-sm font-semibold font-body transition-colors"
-          :class="activeType === 'midday'
-            ? 'bg-slate-800 text-white'
-            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-          @click="setActiveType('midday')"
-        >
-          Avance del dia
         </button>
       </div>
 
