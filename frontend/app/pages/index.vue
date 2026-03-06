@@ -42,6 +42,26 @@ const heroSubtitle = computed(() => {
   return dateStr
 })
 
+const cleanSummary = computed(() => {
+  if (!briefing.value) return ''
+  return briefing.value.executiveSummary
+    .replace(/\s*Actualizado a las \d{1,2}[:.]\d{2}\.?\s*$/i, '')
+    .trim()
+})
+
+const SCRAPE_HOURS_UTC = [9, 12, 15, 18, 21, 0]
+
+const nextUpdateLabel = computed(() => {
+  if (!briefing.value || briefing.value.type !== 'midday') return ''
+  const now = new Date()
+  const currentUTC = now.getUTCHours()
+  const next = SCRAPE_HOURS_UTC.find(h => h > currentUTC)
+    ?? SCRAPE_HOURS_UTC[0]
+  // Convert UTC hour to ART (UTC-3)
+  const artHour = ((next - 3) + 24) % 24
+  return `Proxima: ${String(artHour).padStart(2, '0')}:00`
+})
+
 const heroTitle = computed(() => {
   if (!briefing.value) return 'Ultima Actualizacion'
   return briefing.value.type === 'midday' ? 'Ultima Actualizacion' : 'Resumen de Ayer'
@@ -143,14 +163,24 @@ function formatLastUpdate(date: Date | null): string {
         <div class="absolute inset-0 opacity-[0.05] hero-pattern" />
 
         <div class="relative">
-          <p class="text-sm font-body uppercase tracking-widest text-slate-400 mb-2">
-            {{ heroSubtitle }}
-          </p>
-          <h1 class="font-display text-2xl font-bold text-white mb-4">
-            {{ heroTitle }}
-          </h1>
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-sm font-body uppercase tracking-widest text-slate-400 mb-2">
+                {{ heroSubtitle }}
+              </p>
+              <h1 class="font-display text-2xl font-bold text-white mb-4">
+                {{ heroTitle }}
+              </h1>
+            </div>
+            <div
+              v-if="nextUpdateLabel"
+              class="flex-shrink-0 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-body text-slate-300"
+            >
+              {{ nextUpdateLabel }}
+            </div>
+          </div>
           <p class="font-editorial text-base text-slate-300 leading-relaxed max-w-3xl">
-            {{ briefing.executiveSummary }}
+            {{ cleanSummary }}
           </p>
 
           <!-- Urgency counters -->
@@ -203,13 +233,25 @@ function formatLastUpdate(date: Date | null): string {
       </div>
 
       <!-- Sections -->
-      <BriefingSection
-        v-for="section in briefing.sections"
-        :key="section.title + activeType"
-        :title="section.title"
-        :icon="section.icon"
-        :items="section.items"
-      />
+      <template v-if="briefing.sections.length">
+        <BriefingSection
+          v-for="section in briefing.sections"
+          :key="section.title + activeType"
+          :title="section.title"
+          :icon="section.icon"
+          :items="section.items"
+        />
+      </template>
+
+      <!-- No sections message -->
+      <div
+        v-else
+        class="rounded-xl border border-slate-100 bg-white p-8 text-center"
+      >
+        <p class="font-body text-slate-500">
+          No se generaron secciones detalladas para este resumen.
+        </p>
+      </div>
     </div>
   </div>
 </template>

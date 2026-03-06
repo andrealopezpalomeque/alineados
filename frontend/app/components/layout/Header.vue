@@ -1,4 +1,53 @@
 <script setup lang="ts">
+import { useBriefingStore } from '~/stores/briefing'
+
+const store = useBriefingStore()
+
+const updatedAgo = ref('')
+let timer: ReturnType<typeof setInterval> | null = null
+
+function updateAgo() {
+  const briefing = store.activeBriefing
+  if (!briefing) {
+    updatedAgo.value = ''
+    return
+  }
+
+  // Use updatedAt if available, otherwise generatedAt
+  const raw = briefing.updatedAt || briefing.generatedAt
+  let ts: number
+  if (typeof raw === 'string') {
+    ts = new Date(raw).getTime()
+  } else if (raw && '_seconds' in raw) {
+    ts = raw._seconds * 1000
+  } else {
+    updatedAgo.value = ''
+    return
+  }
+
+  const diffMs = Date.now() - ts
+  const diffMin = Math.floor(diffMs / 60000)
+
+  if (diffMin < 1) {
+    updatedAgo.value = 'Actualizado ahora'
+  } else if (diffMin < 60) {
+    updatedAgo.value = `Actualizado hace ${diffMin} min`
+  } else {
+    const diffH = Math.floor(diffMin / 60)
+    updatedAgo.value = `Actualizado hace ${diffH}h`
+  }
+}
+
+onMounted(() => {
+  updateAgo()
+  timer = setInterval(updateAgo, 30000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
+
+watch(() => store.activeBriefing, updateAgo)
 </script>
 
 <template>
@@ -17,12 +66,15 @@
       <!-- Right side -->
       <div class="flex items-center gap-4">
         <!-- Updated status -->
-        <div class="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
+        <div
+          v-if="updatedAgo"
+          class="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700"
+        >
           <span class="relative flex h-2 w-2">
             <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
             <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
           </span>
-          Actualizado hace 5 min
+          {{ updatedAgo }}
         </div>
 
         <!-- Notification bell -->

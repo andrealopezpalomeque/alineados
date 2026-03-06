@@ -2,9 +2,21 @@
 import { CATEGORY_LABELS } from '~/types/article'
 
 const route = useRoute()
+const router = useRouter()
 const articleId = route.params.id as string
 
 const { article, loading, error } = useArticle(articleId)
+
+const backPath = computed(() => {
+  const from = router.options.history.state.back as string | undefined
+  if (from && from.startsWith('/')) return from
+  return '/feed'
+})
+
+const backLabel = computed(() => {
+  if (backPath.value === '/' || backPath.value?.startsWith('/?')) return 'Volver al resumen'
+  return 'Volver al feed'
+})
 
 const sentimentConfig: Record<string, { label: string; color: string; bg: string }> = {
   positive: { label: 'Positivo', color: '#16a34a', bg: '#f0fdf4' },
@@ -48,10 +60,10 @@ function formatDate(date: Date) {
       <p class="text-slate-500 text-lg mb-2">Artículo no encontrado</p>
       <p class="text-slate-400 text-sm mb-4">{{ error }}</p>
       <NuxtLink
-        to="/feed"
+        :to="backPath"
         class="text-sm font-medium text-institutional-blue hover:underline"
       >
-        Volver al feed
+        {{ backLabel }}
       </NuxtLink>
     </div>
 
@@ -59,11 +71,11 @@ function formatDate(date: Date) {
     <div v-else-if="article">
       <!-- Back link -->
       <NuxtLink
-        to="/feed"
+        :to="backPath"
         class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-6"
       >
         <span>←</span>
-        <span>Volver al feed</span>
+        <span>{{ backLabel }}</span>
       </NuxtLink>
 
       <!-- Top meta: urgency + source + date -->
