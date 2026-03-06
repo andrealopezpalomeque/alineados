@@ -171,21 +171,34 @@ Return a JSON object with these fields (the system will add id, periodStart, per
   Percentages must add up to 100 for each source.
 
 - "timeline": array — 5-10 key political moments in chronological order:
-  { "date": string (e.g. "Lun 3"), "event": string, "type": "gobierno"|"oposicion"|"nacional", "articleId": string (optional) }
+  { "date": string, "event": string, "type": "gobierno"|"oposicion"|"nacional", "articleId": string (optional) }
+  IMPORTANT: For the "date" field, use the EXACT day name and number from the article's publishedAt field. Each article includes a "dayOfWeek" field (Lun/Mar/Mie/Jue/Vie/Sab/Dom) — use it directly. Format: "VIE 6", "MIE 4", etc.
 
 Write in Spanish. Be factual and analytical, never editorializing.
 Respond ONLY with valid JSON, no markdown fences.`;
 
+const DAY_NAMES_ES = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+
 function buildArticlePayload(articles: (Article & { id: string })[]) {
   return articles.map(a => {
     let publishedAtISO = '';
+    let dayOfWeek = '';
     const raw = a.publishedAt;
+    let pubDate: Date | null = null;
+
     if (raw instanceof Timestamp) {
-      publishedAtISO = raw.toDate().toISOString();
+      pubDate = raw.toDate();
     } else if (raw instanceof Date) {
-      publishedAtISO = raw.toISOString();
+      pubDate = raw;
     } else if (typeof raw === 'string' || typeof raw === 'number') {
-      publishedAtISO = new Date(raw).toISOString();
+      pubDate = new Date(raw);
+    }
+
+    if (pubDate) {
+      publishedAtISO = pubDate.toISOString();
+      // Convert to ART (UTC-3) for correct day name
+      const artDate = new Date(pubDate.getTime() - 3 * 60 * 60 * 1000);
+      dayOfWeek = `${DAY_NAMES_ES[artDate.getUTCDay()]} ${artDate.getUTCDate()}`;
     }
 
     return {
@@ -200,6 +213,7 @@ function buildArticlePayload(articles: (Article & { id: string })[]) {
       keyQuotes: a.keyQuotes,
       topics: a.topics,
       publishedAt: publishedAtISO,
+      dayOfWeek,
     };
   });
 }

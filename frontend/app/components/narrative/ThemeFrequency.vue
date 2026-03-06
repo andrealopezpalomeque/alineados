@@ -25,7 +25,7 @@ const maxCount = computed(() =>
       <div
         v-for="(theme, i) in themes"
         :key="theme.name"
-        class="group cursor-pointer"
+        class="group"
       >
         <div class="mb-1.5 flex items-center justify-between">
           <div class="flex items-center gap-2">
@@ -63,14 +63,14 @@ const maxCount = computed(() =>
           />
         </div>
 
-        <p class="mt-1.5 font-editorial text-xs leading-relaxed text-slate-400 opacity-0 transition-opacity group-hover:opacity-100">
+        <p class="mt-1.5 font-editorial text-xs leading-relaxed text-slate-400">
           {{ theme.context }}
         </p>
       </div>
     </div>
 
     <p class="ml-1 mt-3 font-editorial text-xs text-slate-400">
-      Pase el cursor sobre cada tema para ver contexto. Las flechas indican la variacion respecto a la semana anterior.
+      Las flechas indican la variacion respecto a la semana anterior.
     </p>
   </div>
 </template>

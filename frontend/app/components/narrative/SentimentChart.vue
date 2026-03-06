@@ -38,20 +38,27 @@ function getSourceColor(source: string): string {
         </div>
       </div>
 
-      <div class="space-y-3">
+      <div class="space-y-4">
         <div
           v-for="item in sources"
           :key="item.source"
-          class="flex items-center gap-3"
         >
-          <span
-            class="w-36 flex-shrink-0 text-right text-xs font-semibold"
-            :style="{ color: getSourceColor(item.source) }"
-          >
-            {{ item.source }}
-          </span>
-
-          <div class="flex h-5 flex-1 overflow-hidden rounded-full bg-slate-100">
+          <div class="mb-1.5 flex items-center justify-between">
+            <span
+              class="text-xs font-semibold"
+              :style="{ color: getSourceColor(item.source) }"
+            >
+              {{ item.source }}
+            </span>
+            <div class="flex items-center gap-1">
+              <span class="text-xs font-medium text-emerald-600">{{ item.positivePercent }}%</span>
+              <span class="text-xs text-slate-300">/</span>
+              <span class="text-xs text-slate-400">{{ item.neutralPercent }}%</span>
+              <span class="text-xs text-slate-300">/</span>
+              <span class="text-xs text-red-400">{{ item.negativePercent }}%</span>
+            </div>
+          </div>
+          <div class="flex h-5 overflow-hidden rounded-full bg-slate-100">
             <div
               class="h-full transition-all"
               :style="{ width: `${item.positivePercent}%`, backgroundColor: '#34d399' }"
@@ -67,14 +74,6 @@ function getSourceColor(source: string): string {
               :style="{ width: `${item.negativePercent}%`, backgroundColor: '#f87171' }"
               :title="`Negativo: ${item.negativePercent}%`"
             />
-          </div>
-
-          <div class="flex w-24 flex-shrink-0 items-center gap-1">
-            <span class="text-xs font-medium text-emerald-600">{{ item.positivePercent }}%</span>
-            <span class="text-xs text-slate-300">/</span>
-            <span class="text-xs text-slate-400">{{ item.neutralPercent }}%</span>
-            <span class="text-xs text-slate-300">/</span>
-            <span class="text-xs text-red-400">{{ item.negativePercent }}%</span>
           </div>
         </div>
       </div>
