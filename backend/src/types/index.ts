@@ -81,3 +81,63 @@ export interface ScrapeStatus {
     articleCount: number;
   }>;
 }
+
+// ─── Narrative Analysis ─────────────────────────────────────────────
+
+export interface NarrativeTheme {
+  name: string;
+  mentionCount: number;
+  trend: 'up' | 'down' | 'stable';
+  weekOverWeekDelta: number;
+  context: string;
+  relatedArticleIds: string[];
+}
+
+export interface GovernorFrame {
+  frame: string;
+  communicationType:
+    | 'credit-claiming'
+    | 'agenda-setting'
+    | 'coalition-building'
+    | 'crisis-response'
+    | 'blame-deflection';
+  frequency: 'alta' | 'media' | 'baja';
+  exampleQuote: string;
+  analysis: string;
+}
+
+export interface OppositionNarrative {
+  actor: string;
+  narrative: string;
+  mentionCount: number;
+  momentum: 'growing' | 'stable' | 'declining' | 'emerging';
+  riskAssessment: string;
+}
+
+export interface SourceSentiment {
+  source: string;
+  positivePercent: number;
+  neutralPercent: number;
+  negativePercent: number;
+}
+
+export interface TimelineEvent {
+  date: string;
+  event: string;
+  type: 'gobierno' | 'oposicion' | 'nacional';
+  articleId?: string;
+  interviewId?: string;
+}
+
+export interface NarrativeReport {
+  id: string;
+  periodStart: Timestamp | Date;
+  periodEnd: Timestamp | Date;
+  generatedAt: Timestamp | Date;
+  executiveSummary: string;
+  themes: NarrativeTheme[];
+  governorFrames: GovernorFrame[];
+  oppositionNarratives: OppositionNarrative[];
+  sentimentBySource: SourceSentiment[];
+  timeline: TimelineEvent[];
+}
