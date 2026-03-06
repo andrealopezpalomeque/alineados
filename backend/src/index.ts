@@ -23,7 +23,10 @@ registerScraper(new RadioSudamericanaScraper());
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
+app.use(cors({
+  origin: allowedOrigins,
+}));
 app.use(express.json());
 
 // Health check

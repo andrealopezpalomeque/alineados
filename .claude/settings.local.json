@@ -28,7 +28,9 @@
       "Bash(cp:*)",
       "Bash(yarn nuxt:*)",
       "Bash(python3:*)",
-      "Bash(yarn nuxi:*)"
+      "Bash(yarn nuxi:*)",
+      "Bash(firebase:*)",
+      "Bash(yarn generate:*)"
     ]
   }
 }
