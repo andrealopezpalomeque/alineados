@@ -77,11 +77,11 @@ function formatLastUpdate(date: Date | null): string {
 
       <NarrativeTabs v-model:active-tab="activeTab" />
 
-      <ThemeFrequency v-if="activeTab === 'themes'" :themes="report.themes" />
-      <GovernorFrames v-if="activeTab === 'frames'" :frames="report.governorFrames" />
-      <OppositionRadar v-if="activeTab === 'opposition'" :narratives="report.oppositionNarratives" />
-      <SentimentChart v-if="activeTab === 'sentiment'" :sources="report.sentimentBySource" />
-      <WeeklyTimeline v-if="activeTab === 'timeline'" :events="report.timeline" />
+      <NarrativeThemeFrequency v-if="activeTab === 'themes'" :themes="report.themes" />
+      <NarrativeGovernorFrames v-if="activeTab === 'frames'" :frames="report.governorFrames" />
+      <NarrativeOppositionRadar v-if="activeTab === 'opposition'" :narratives="report.oppositionNarratives" />
+      <NarrativeSentimentChart v-if="activeTab === 'sentiment'" :sources="report.sentimentBySource" />
+      <NarrativeWeeklyTimeline v-if="activeTab === 'timeline'" :events="report.timeline" />
     </div>
   </div>
 </template>
