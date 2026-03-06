@@ -239,6 +239,52 @@ function buildPrompt(
   return prompt;
 }
 
+// ─── Post-processing: fix timeline day names ────────────────────
+
+function fixTimelineDates(
+  timeline: NarrativeReport['timeline'],
+  articles: (Article & { id: string })[],
+): NarrativeReport['timeline'] {
+  // Build a map of articleId → correct "Vie 6" style date
+  const articleDateMap = new Map<string, string>();
+  for (const a of articles) {
+    let pubDate: Date | null = null;
+    const raw = a.publishedAt;
+    if (raw instanceof Timestamp) pubDate = raw.toDate();
+    else if (raw instanceof Date) pubDate = raw;
+    else if (typeof raw === 'string' || typeof raw === 'number') pubDate = new Date(raw);
+
+    if (pubDate) {
+      const artDate = new Date(pubDate.getTime() - 3 * 60 * 60 * 1000);
+      const dayName = DAY_NAMES_ES[artDate.getUTCDay()].toUpperCase();
+      const dayNum = artDate.getUTCDate();
+      articleDateMap.set(a.id, `${dayName} ${dayNum}`);
+    }
+  }
+
+  return timeline.map(entry => {
+    // If this timeline entry has an articleId, use the correct date from the article
+    if (entry.articleId && articleDateMap.has(entry.articleId)) {
+      return { ...entry, date: articleDateMap.get(entry.articleId)! };
+    }
+
+    // For entries without articleId, try to fix the day name by extracting the number
+    // and finding articles from that day
+    const numMatch = entry.date.match(/(\d+)/);
+    if (numMatch) {
+      const dayNum = parseInt(numMatch[1], 10);
+      // Find any article on that day to get the correct day name
+      for (const [, dateStr] of articleDateMap) {
+        if (dateStr.endsWith(` ${dayNum}`)) {
+          return { ...entry, date: dateStr };
+        }
+      }
+    }
+
+    return entry;
+  });
+}
+
 // ─── Main generator ─────────────────────────────────────────────────
 
 interface GeminiNarrativeResponse {
@@ -312,7 +358,10 @@ export async function generateNarrativeReport(weekOverride?: string): Promise<Na
     governorFrames: Array.isArray(parsed.governorFrames) ? parsed.governorFrames : [],
     oppositionNarratives: Array.isArray(parsed.oppositionNarratives) ? parsed.oppositionNarratives : [],
     sentimentBySource: Array.isArray(parsed.sentimentBySource) ? parsed.sentimentBySource : [],
-    timeline: Array.isArray(parsed.timeline) ? parsed.timeline : [],
+    timeline: fixTimelineDates(
+      Array.isArray(parsed.timeline) ? parsed.timeline : [],
+      articles,
+    ),
   };
 
   await db.collection('narrativeAnalysis').doc(weekId).set(report);
