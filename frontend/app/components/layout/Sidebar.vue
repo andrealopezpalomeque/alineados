@@ -11,6 +11,7 @@ const navItems = [
   { label: 'Gabinete', icon: '👥', to: '/cabinet' },
   { label: 'Oposición', icon: '📢', to: '/opposition' },
   { label: 'Entrevistas', icon: '🎙', to: '/interviews' },
+  { label: 'Análisis Semanal', icon: '📊', to: '/narrative' },
 ]
 
 function isActive(to: string) {
