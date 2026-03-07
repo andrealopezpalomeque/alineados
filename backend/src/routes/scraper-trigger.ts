@@ -180,6 +180,7 @@ router.post('/', async (_req: Request, res: Response) => {
                 ...result.fields,
                 processed: true,
                 processedAt: Timestamp.now(),
+                filtered: false,
               });
               articlesProcessed++;
               console.log(`[scraper-trigger] Processed: ${(data.title as string).substring(0, 60)}`);

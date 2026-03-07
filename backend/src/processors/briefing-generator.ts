@@ -104,6 +104,8 @@ function formatARTTime(date: Date): string {
 }
 
 async function fetchArticlesForRange(start: Date, end: Date): Promise<(Article & { id: string })[]> {
+  console.log(`[briefing] Query range: ${start.toISOString()} → ${end.toISOString()}`);
+
   const snapshot = await db.collection('articles')
     .where('processed', '==', true)
     .where('publishedAt', '>=', Timestamp.fromDate(start))
@@ -111,12 +113,23 @@ async function fetchArticlesForRange(start: Date, end: Date): Promise<(Article &
     .orderBy('publishedAt', 'desc')
     .get();
 
-  return snapshot.docs
-    .filter(doc => !doc.data().filtered && !doc.data().archived)
-    .map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as (Article & { id: string })[];
+  console.log(`[briefing] Firestore returned ${snapshot.docs.length} processed articles in range`);
+
+  const results: (Article & { id: string })[] = [];
+  for (const doc of snapshot.docs) {
+    const data = doc.data();
+    const publishedAt = data.publishedAt?.toDate?.() || data.publishedAt;
+    if (data.filtered) {
+      console.log(`[briefing]   EXCLUDED (filtered): "${data.title}" [${data.category}] publishedAt=${publishedAt}`);
+    } else if (data.archived) {
+      console.log(`[briefing]   EXCLUDED (archived): "${data.title}" [${data.category}] publishedAt=${publishedAt}`);
+    } else {
+      console.log(`[briefing]   INCLUDED: "${data.title}" [${data.category}, ${data.urgency}] publishedAt=${publishedAt}`);
+      results.push({ id: doc.id, ...data } as Article & { id: string });
+    }
+  }
+
+  return results;
 }
 
 function groupByCategory(articles: (Article & { id: string })[]): Record<string, (Article & { id: string })[]> {
@@ -304,6 +317,7 @@ export async function generateBriefing(options?: GenerateBriefingOptions): Promi
     end = bounds.end;
   }
 
+  console.log(`[briefing] Date range for ${type}: start=${start.toISOString()} end=${end.toISOString()}`);
   const articles = await fetchArticlesForRange(start, end);
   console.log(`[briefing] Found ${articles.length} processed articles for ${dateId} (${type})`);
 

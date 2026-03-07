@@ -117,6 +117,90 @@ router.post('/generate', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/briefings/debug-articles — show what articles the briefing generator would see today
+router.get('/debug-articles', async (_req: Request, res: Response) => {
+  try {
+    const { Timestamp } = await import('firebase-admin/firestore');
+
+    const now = new Date();
+    const artNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+    const year = artNow.getFullYear();
+    const month = artNow.getMonth();
+    const day = artNow.getDate();
+    const start = new Date(Date.UTC(year, month, day, 3, 0, 0, 0)); // ART midnight
+
+    const snapshot = await db.collection('articles')
+      .where('processed', '==', true)
+      .where('publishedAt', '>=', Timestamp.fromDate(start))
+      .where('publishedAt', '<=', Timestamp.fromDate(now))
+      .orderBy('publishedAt', 'desc')
+      .get();
+
+    const allInRange = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        title: data.title,
+        category: data.category,
+        urgency: data.urgency,
+        relevance: data.relevance,
+        source: data.source,
+        filtered: data.filtered || false,
+        archived: data.archived || false,
+        publishedAt: data.publishedAt?.toDate?.()?.toISOString() || data.publishedAt,
+        processedAt: data.processedAt?.toDate?.()?.toISOString() || data.processedAt,
+        inBriefing: !data.filtered && !data.archived,
+      };
+    });
+
+    // Also check articles NOT in range (processed today but publishedAt outside range)
+    const recentProcessed = await db.collection('articles')
+      .where('processed', '==', true)
+      .orderBy('processedAt', 'desc')
+      .limit(20)
+      .get();
+
+    const recentButOutOfRange = recentProcessed.docs
+      .filter(doc => {
+        const pubAt = doc.data().publishedAt?.toDate?.();
+        return pubAt && (pubAt < start || pubAt > now);
+      })
+      .map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title,
+          category: data.category,
+          urgency: data.urgency,
+          source: data.source,
+          filtered: data.filtered || false,
+          publishedAt: data.publishedAt?.toDate?.()?.toISOString() || data.publishedAt,
+          processedAt: data.processedAt?.toDate?.()?.toISOString() || data.processedAt,
+          reason: 'publishedAt outside briefing range',
+        };
+      });
+
+    res.json({
+      queryRange: { start: start.toISOString(), end: now.toISOString() },
+      artDate: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+      inRange: {
+        total: allInRange.length,
+        includedInBriefing: allInRange.filter(a => a.inBriefing).length,
+        filtered: allInRange.filter(a => a.filtered).length,
+        archived: allInRange.filter(a => a.archived).length,
+        articles: allInRange,
+      },
+      outOfRange: {
+        total: recentButOutOfRange.length,
+        articles: recentButOutOfRange,
+      },
+    });
+  } catch (error) {
+    console.error('[briefings] Debug articles error:', error);
+    res.status(500).json({ error: 'Failed to fetch debug info' });
+  }
+});
+
 // GET /api/briefings/generate-status — last generation attempt info
 router.get('/generate-status', (_req: Request, res: Response) => {
   const status = getLastGenerationStatus();
