@@ -47,7 +47,7 @@ function formatLastUpdate(date: Date | null): string {
         <Icon name="heroicons:exclamation-triangle" class="mx-auto mb-4 h-10 w-10 text-slate-400" />
         <p class="mb-1 font-body text-slate-600">No se pudo cargar el analisis semanal.</p>
         <p v-if="lastFetchedAt" class="mb-6 font-body text-sm text-slate-400">
-          Ultima actualizacion: {{ formatLastUpdate(lastFetchedAt) }}
+          Ultima actualización: {{ formatLastUpdate(lastFetchedAt) }}
         </p>
         <button
           class="rounded-lg bg-institutional-blue px-5 py-2.5 font-body text-sm font-semibold text-white transition-colors hover:bg-blue-700"

@@ -63,8 +63,8 @@ const nextUpdateLabel = computed(() => {
 })
 
 const heroTitle = computed(() => {
-  if (!briefing.value) return 'Ultima Actualizacion'
-  return briefing.value.type === 'midday' ? 'Ultima Actualizacion' : 'Resumen de Ayer'
+  if (!briefing.value) return 'Ultima actualización'
+  return briefing.value.type === 'midday' ? 'Ultima actualización' : 'Resumen de Ayer'
 })
 
 function formatLastUpdate(date: Date | null): string {
@@ -127,7 +127,7 @@ function formatLastUpdate(date: Date | null): string {
         <Icon name="heroicons:exclamation-triangle" class="h-10 w-10 text-slate-400 mx-auto mb-4" />
         <p class="font-body text-slate-600 mb-1">No se pudo cargar el resumen.</p>
         <p v-if="lastFetchedAt" class="font-body text-sm text-slate-400 mb-6">
-          Ultima actualizacion: {{ formatLastUpdate(lastFetchedAt) }}
+          Ultima actualización: {{ formatLastUpdate(lastFetchedAt) }}
         </p>
         <button
           class="rounded-lg bg-institutional-blue px-5 py-2.5 text-sm font-semibold text-white font-body hover:bg-blue-700 transition-colors"
@@ -221,7 +221,7 @@ function formatLastUpdate(date: Date | null): string {
             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
           @click="setActiveType('midday')"
         >
-          Ultima actualizacion
+          Ultima actualización
         </button>
         <button
           class="rounded-full px-4 py-1.5 text-sm font-semibold font-body transition-colors"
