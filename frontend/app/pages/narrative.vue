@@ -18,7 +18,7 @@ function formatLastUpdate(date: Date | null): string {
   <div>
     <!-- LOADING STATE -->
     <div v-if="loading && !report" class="space-y-6">
-      <div class="animate-pulse rounded-2xl bg-slate-800 p-8">
+      <div class="animate-pulse rounded-2xl bg-slate-800 p-5 md:p-8">
         <div class="mb-4 h-3 w-40 rounded bg-slate-600" />
         <div class="mb-5 h-7 w-72 rounded bg-slate-600" />
         <div class="max-w-3xl space-y-2.5">
@@ -72,7 +72,7 @@ function formatLastUpdate(date: Date | null): string {
     </div>
 
     <!-- CONTENT -->
-    <div v-else-if="report" class="space-y-8">
+    <div v-else-if="report" class="space-y-6 md:space-y-8">
       <NarrativeHero :report="report" />
 
       <NarrativeTabs v-model:active-tab="activeTab" />

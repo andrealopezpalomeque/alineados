@@ -10,11 +10,11 @@ defineProps<{
 <template>
   <div>
     <div class="mb-2 flex items-center gap-3">
-      <h2 class="font-display text-lg font-bold text-slate-800">
+      <h2 class="font-display text-base md:text-lg font-bold text-slate-800">
         Radar de Oposición
       </h2>
     </div>
-    <p class="mb-6 font-editorial text-sm text-slate-500">
+    <p class="mb-4 md:mb-6 font-editorial text-xs md:text-sm text-slate-500">
       Narrativas activas de la oposición y evaluación de riesgo comunicacional.
     </p>
 
@@ -22,9 +22,9 @@ defineProps<{
       <div
         v-for="item in narratives"
         :key="item.actor + item.narrative"
-        class="rounded-2xl border border-slate-100 bg-white p-6 transition-all hover:shadow-md"
+        class="rounded-2xl border border-slate-100 bg-white p-4 md:p-6 transition-all hover:shadow-md"
       >
-        <div class="mb-3 flex items-start justify-between gap-4">
+        <div class="mb-3 flex items-start justify-between gap-3 md:gap-4">
           <div>
             <div class="mb-1 flex items-center gap-2">
               <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -50,7 +50,7 @@ defineProps<{
           </div>
         </div>
 
-        <div class="rounded-xl border-l-2 border-red-300 bg-red-50 p-4">
+        <div class="rounded-xl border-l-2 border-red-300 bg-red-50 p-3 md:p-4">
           <p class="mb-1 text-xs font-bold uppercase tracking-wider text-red-700">
             Evaluación de riesgo
           </p>

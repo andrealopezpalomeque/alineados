@@ -10,11 +10,11 @@ defineProps<{
 <template>
   <div>
     <div class="mb-2 flex items-center gap-3">
-      <h2 class="font-display text-lg font-bold text-slate-800">
+      <h2 class="font-display text-base md:text-lg font-bold text-slate-800">
         Narrativas del Gobernador
       </h2>
     </div>
-    <p class="mb-6 font-editorial text-sm text-slate-500">
+    <p class="mb-4 md:mb-6 font-editorial text-xs md:text-sm text-slate-500">
       Análisis de los encuadres comunicacionales utilizados por el gobernador Valdés en sus apariciones públicas esta semana.
     </p>
 
@@ -22,10 +22,10 @@ defineProps<{
       <div
         v-for="frame in frames"
         :key="frame.frame"
-        class="rounded-2xl border border-slate-100 bg-white p-6 transition-all hover:shadow-md"
+        class="rounded-2xl border border-slate-100 bg-white p-4 md:p-6 transition-all hover:shadow-md"
       >
-        <div class="mb-3 flex flex-wrap items-center gap-3">
-          <h3 class="text-base font-bold text-slate-800">{{ frame.frame }}</h3>
+        <div class="mb-3 flex flex-wrap items-center gap-2 md:gap-3">
+          <h3 class="text-sm md:text-base font-bold text-slate-800">{{ frame.frame }}</h3>
           <span
             :class="[
               'rounded-full border px-2 py-0.5 text-xs font-semibold',
@@ -36,12 +36,12 @@ defineProps<{
           >
             {{ COMMUNICATION_TYPE_LABELS[frame.communicationType] }}
           </span>
-          <span class="ml-auto text-xs text-slate-400">
+          <span class="text-xs text-slate-400 md:ml-auto">
             Frecuencia: <span class="font-semibold text-slate-600">{{ frame.frequency }}</span>
           </span>
         </div>
 
-        <div class="mb-3 rounded-xl border-l-2 border-[#2563eb] bg-slate-50 p-4">
+        <div class="mb-3 rounded-xl border-l-2 border-[#2563eb] bg-slate-50 p-3 md:p-4">
           <p class="font-editorial text-sm italic text-slate-600">
             {{ frame.exampleQuote }}
           </p>

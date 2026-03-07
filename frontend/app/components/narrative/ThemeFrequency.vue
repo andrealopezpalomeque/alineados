@@ -14,14 +14,14 @@ const maxCount = computed(() =>
 
 <template>
   <div>
-    <div class="mb-6 flex items-center gap-3">
-      <h2 class="font-display text-lg font-bold text-slate-800">
+    <div class="mb-4 md:mb-6">
+      <h2 class="font-display text-base md:text-lg font-bold text-slate-800">
         Frecuencia de Temas
       </h2>
-      <span class="text-sm text-slate-400">Últimos 7 días · todas las fuentes</span>
+      <span class="text-xs md:text-sm text-slate-400">Últimos 7 días · todas las fuentes</span>
     </div>
 
-    <div class="space-y-5 rounded-2xl border border-slate-100 bg-white p-6">
+    <div class="space-y-5 rounded-2xl border border-slate-100 bg-white p-4 md:p-6">
       <div
         v-for="(theme, i) in themes"
         :key="theme.name"

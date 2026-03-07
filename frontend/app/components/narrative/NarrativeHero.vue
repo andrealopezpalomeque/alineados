@@ -32,40 +32,40 @@ const sourcesCount = computed(() => props.report.sentimentBySource.length)
     :style="{ background: 'linear-gradient(135deg, #0f172a 0%, #1a2744 50%, #0f2438 100%)' }"
   >
     <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 24px 24px" />
-    <div class="relative p-8">
+    <div class="relative p-5 md:p-8">
       <div class="mb-1 flex items-center gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-lg backdrop-blur-sm">
+        <div class="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-xl bg-white/10 text-base md:text-lg backdrop-blur-sm">
           📊
         </div>
         <p class="text-sm font-medium uppercase tracking-wide text-slate-400">
           Análisis semanal
         </p>
       </div>
-      <h1 class="mt-4 font-display text-2xl font-bold text-white">
+      <h1 class="mt-3 md:mt-4 font-display text-xl md:text-2xl font-bold text-white">
         Radar de Narrativa Política
       </h1>
       <p class="mt-1 text-sm text-slate-400">
         {{ formatPeriod(report.periodStart, report.periodEnd) }}
       </p>
 
-      <p class="mt-4 max-w-3xl font-editorial text-base leading-relaxed text-slate-300">
+      <p class="mt-3 md:mt-4 max-w-3xl font-editorial text-sm md:text-base leading-relaxed text-slate-300">
         {{ report.executiveSummary }}
       </p>
 
-      <div class="mt-6 flex items-center gap-6">
+      <div class="mt-5 md:mt-6 flex items-center gap-4 md:gap-6">
         <div class="flex items-center gap-2">
-          <span class="text-2xl font-bold text-white">{{ totalMentions }}</span>
-          <span class="text-xs leading-tight text-slate-400">menciones<br>analizadas</span>
+          <span class="text-xl md:text-2xl font-bold text-white">{{ totalMentions }}</span>
+          <span class="text-[10px] md:text-xs leading-tight text-slate-400">menciones<br>analizadas</span>
         </div>
         <div class="h-8 w-px bg-white/10" />
         <div class="flex items-center gap-2">
-          <span class="text-2xl font-bold text-white">{{ governorFrameCount }}</span>
-          <span class="text-xs leading-tight text-slate-400">marcos del<br>gobernador</span>
+          <span class="text-xl md:text-2xl font-bold text-white">{{ governorFrameCount }}</span>
+          <span class="text-[10px] md:text-xs leading-tight text-slate-400">marcos del<br>gobernador</span>
         </div>
         <div class="h-8 w-px bg-white/10" />
         <div class="flex items-center gap-2">
-          <span class="text-2xl font-bold text-white">{{ sourcesCount }}</span>
-          <span class="text-xs leading-tight text-slate-400">fuentes<br>monitoreadas</span>
+          <span class="text-xl md:text-2xl font-bold text-white">{{ sourcesCount }}</span>
+          <span class="text-[10px] md:text-xs leading-tight text-slate-400">fuentes<br>monitoreadas</span>
         </div>
       </div>
     </div>

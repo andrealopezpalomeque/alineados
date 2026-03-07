@@ -15,19 +15,19 @@ const TYPE_CONFIG: Record<string, { color: string; bg: string; label: string }> 
 <template>
   <div>
     <div class="mb-2 flex items-center gap-3">
-      <h2 class="font-display text-lg font-bold text-slate-800">
+      <h2 class="font-display text-base md:text-lg font-bold text-slate-800">
         Línea de Tiempo
       </h2>
     </div>
-    <p class="mb-6 font-editorial text-sm text-slate-500">
+    <p class="mb-4 md:mb-6 font-editorial text-xs md:text-sm text-slate-500">
       Momentos clave de la semana política.
     </p>
 
-    <div class="rounded-2xl border border-slate-100 bg-white p-6">
+    <div class="rounded-2xl border border-slate-100 bg-white p-4 md:p-6">
       <div
         v-for="(item, i) in events"
         :key="i"
-        class="flex gap-4"
+        class="flex gap-3 md:gap-4"
       >
         <div class="flex flex-col items-center">
           <div
