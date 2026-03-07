@@ -227,9 +227,13 @@ async function summarizeCategory(
     };
   });
 
+  const selectInstruction = articles.length <= 5
+    ? `Include ALL ${articles.length} article(s) — do not skip any.`
+    : `Select the 3-5 most politically relevant items for the Minister of Justice and Human Rights.`;
+
   const prompt = `You are a political analyst for Corrientes Province, Argentina. Governor: Juan Pablo Valdés (UCR).
-From these articles in the "${categoryName}" category, select the 3-5 most politically relevant items for the Minister of Justice and Human Rights.
-For each selected item return: { articleId, headline, summary (1-2 sentences, factual, formal tone), urgency (breaking/important/routine), source, time (use the time field from the input, format HH:mm) }
+From these articles in the "${categoryName}" category: ${selectInstruction}
+For each item return: { articleId, headline, summary (1-2 sentences, factual, formal tone), urgency (breaking/important/routine), source, time (use the time field from the input, format HH:mm) }
 Respond ONLY with valid JSON: { "items": [...] }
 
 Articles:
@@ -237,7 +241,12 @@ ${JSON.stringify(articlesJson, null, 2)}`;
 
   const result = await callGeminiWithRetry<{ items: BriefingItem[] }>(prompt, `category:${category}`);
   const items = Array.isArray(result.items) ? result.items : [];
-  console.log(`[briefing] Category ${category}: selected ${items.length} items`);
+  console.log(`[briefing] Category ${category}: ${articles.length} input → ${items.length} selected`);
+
+  if (items.length === 0 && articles.length > 0) {
+    console.warn(`[briefing] Category ${category}: Gemini returned 0 items from ${articles.length} articles — this may indicate a problem`);
+  }
+
   return items;
 }
 
@@ -364,8 +373,27 @@ export async function generateBriefing(options?: GenerateBriefingOptions): Promi
         const items = await summarizeCategory(cat, groups[cat]);
         categoryResults[cat] = items;
       } catch (error) {
-        console.error(`[briefing] Failed to process category ${cat}:`, error);
-        categoryResults[cat] = [];
+        console.error(`[briefing] Failed to process category ${cat}, using fallback:`, error);
+        // Fallback: include articles with their original metadata instead of dropping them
+        categoryResults[cat] = groups[cat].map(a => {
+          let timeStr = '';
+          const raw = a.publishedAt;
+          if (raw instanceof Timestamp) {
+            timeStr = formatARTTime(raw.toDate());
+          } else if (raw instanceof Date) {
+            timeStr = formatARTTime(raw);
+          } else if (typeof raw === 'string' || typeof raw === 'number') {
+            timeStr = formatARTTime(new Date(raw));
+          }
+          return {
+            articleId: a.id,
+            headline: a.title,
+            summary: a.summary || a.title,
+            urgency: (a.urgency as 'breaking' | 'important' | 'routine') || 'routine',
+            source: a.source,
+            time: timeStr,
+          };
+        });
       }
     });
 

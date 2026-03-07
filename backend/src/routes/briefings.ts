@@ -129,6 +129,7 @@ router.get('/debug-articles', async (_req: Request, res: Response) => {
     const day = artNow.getDate();
     const start = new Date(Date.UTC(year, month, day, 3, 0, 0, 0)); // ART midnight
 
+    // Query 1: articles in today's briefing range
     const snapshot = await db.collection('articles')
       .where('processed', '==', true)
       .where('publishedAt', '>=', Timestamp.fromDate(start))
@@ -147,20 +148,20 @@ router.get('/debug-articles', async (_req: Request, res: Response) => {
         source: data.source,
         filtered: data.filtered || false,
         archived: data.archived || false,
-        publishedAt: data.publishedAt?.toDate?.()?.toISOString() || data.publishedAt,
-        processedAt: data.processedAt?.toDate?.()?.toISOString() || data.processedAt,
+        publishedAt: data.publishedAt?.toDate?.()?.toISOString() || String(data.publishedAt),
+        scrapedAt: data.scrapedAt?.toDate?.()?.toISOString() || String(data.scrapedAt),
         inBriefing: !data.filtered && !data.archived,
       };
     });
 
-    // Also check articles NOT in range (processed today but publishedAt outside range)
-    const recentProcessed = await db.collection('articles')
+    // Query 2: recent processed articles (by publishedAt desc, no composite index needed)
+    const recentSnapshot = await db.collection('articles')
       .where('processed', '==', true)
-      .orderBy('processedAt', 'desc')
+      .orderBy('publishedAt', 'desc')
       .limit(20)
       .get();
 
-    const recentButOutOfRange = recentProcessed.docs
+    const recentButOutOfRange = recentSnapshot.docs
       .filter(doc => {
         const pubAt = doc.data().publishedAt?.toDate?.();
         return pubAt && (pubAt < start || pubAt > now);
@@ -174,8 +175,8 @@ router.get('/debug-articles', async (_req: Request, res: Response) => {
           urgency: data.urgency,
           source: data.source,
           filtered: data.filtered || false,
-          publishedAt: data.publishedAt?.toDate?.()?.toISOString() || data.publishedAt,
-          processedAt: data.processedAt?.toDate?.()?.toISOString() || data.processedAt,
+          publishedAt: data.publishedAt?.toDate?.()?.toISOString() || String(data.publishedAt),
+          scrapedAt: data.scrapedAt?.toDate?.()?.toISOString() || String(data.scrapedAt),
           reason: 'publishedAt outside briefing range',
         };
       });
@@ -196,8 +197,9 @@ router.get('/debug-articles', async (_req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('[briefings] Debug articles error:', error);
-    res.status(500).json({ error: 'Failed to fetch debug info' });
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[briefings] Debug articles error:', msg, error);
+    res.status(500).json({ error: 'Failed to fetch debug info', details: msg });
   }
 });
 
