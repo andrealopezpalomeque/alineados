@@ -22,7 +22,7 @@ function isActive(to: string) {
 
 <template>
   <aside
-    class="sticky top-0 flex h-screen flex-col justify-between transition-all duration-300"
+    class="sticky top-0 flex h-screen flex-shrink-0 flex-col justify-between border-r border-slate-800/20 transition-all duration-300"
     :class="uiStore.sidebarOpen ? 'w-[260px]' : 'w-[72px]'"
     :style="{ background: 'linear-gradient(180deg, #0f172a 0%, #162032 100%)' }"
   >

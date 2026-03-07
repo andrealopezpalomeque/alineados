@@ -19,16 +19,16 @@ function selectCategory(cat: ArticleCategory | null) {
 
 <template>
   <div>
-    <h1 class="font-display text-2xl font-bold text-slate-900 mb-6">
+    <h1 class="font-display text-xl md:text-2xl font-bold text-slate-900 mb-4 md:mb-6">
       Todas las Noticias
     </h1>
 
     <!-- Category filter pills -->
-    <div class="flex flex-wrap gap-2 mb-6">
+    <div class="feed-filters flex gap-2 mb-5 md:mb-6 overflow-x-auto pb-2 md:overflow-visible md:pb-0 md:flex-wrap -mx-1 px-1 md:mx-0 md:px-0">
       <button
         v-for="cat in categoryFilters"
         :key="cat.label"
-        class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+        class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
         :class="
           filters.category === cat.key || (!filters.category && !cat.key)
             ? 'bg-slate-800 text-white'
@@ -50,3 +50,13 @@ function selectCategory(cat: ArticleCategory | null) {
     />
   </div>
 </template>
+
+<style scoped>
+.feed-filters {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.feed-filters::-webkit-scrollbar {
+  display: none;
+}
+</style>

@@ -25,8 +25,8 @@ function goToArticle(articleId: string) {
 <template>
   <div>
     <div class="flex items-center gap-2.5 py-3">
-      <span class="text-xl leading-none">{{ icon }}</span>
-      <h2 class="font-display text-lg font-bold text-slate-800">{{ title }}</h2>
+      <span class="text-lg md:text-xl leading-none">{{ icon }}</span>
+      <h2 class="font-display text-base md:text-lg font-bold text-slate-800">{{ title }}</h2>
       <span class="text-sm text-slate-400 font-body">{{ items.length }}</span>
     </div>
 
@@ -38,7 +38,7 @@ function goToArticle(articleId: string) {
       <div
         v-for="item in items"
         :key="item.articleId"
-        class="rounded-xl border border-slate-100 bg-white p-5 transition-all hover:shadow-md hover:border-slate-200 cursor-pointer"
+        class="rounded-xl border border-slate-100 bg-white p-4 md:p-5 transition-all hover:shadow-md hover:border-slate-200 cursor-pointer"
         @click="goToArticle(item.articleId)"
       >
         <div class="flex items-start gap-3">
@@ -51,7 +51,7 @@ function goToArticle(articleId: string) {
               <BriefingUrgencyBadge :urgency="item.urgency" />
               <BriefingSourceTag :source="item.source" />
             </div>
-            <h3 class="font-body text-[15px] font-semibold text-slate-900 leading-snug">
+            <h3 class="font-body text-sm md:text-[15px] font-semibold text-slate-900 leading-snug">
               {{ item.headline }}
             </h3>
             <p class="mt-1.5 font-editorial text-sm text-slate-500 leading-relaxed">

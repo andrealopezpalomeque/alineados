@@ -82,7 +82,7 @@ function formatLastUpdate(date: Date | null): string {
   <div>
     <!-- LOADING STATE -->
     <div v-if="loading && !briefing" class="space-y-6">
-      <div class="rounded-2xl bg-slate-800 p-8 animate-pulse">
+      <div class="rounded-2xl bg-slate-800 p-5 md:p-8 animate-pulse">
         <div class="h-3 w-40 rounded bg-slate-600 mb-4" />
         <div class="h-7 w-72 rounded bg-slate-600 mb-5" />
         <div class="space-y-2.5 max-w-3xl">
@@ -101,7 +101,7 @@ function formatLastUpdate(date: Date | null): string {
         <div
           v-for="m in 2"
           :key="m"
-          class="rounded-xl border border-slate-100 bg-white p-5 animate-pulse"
+          class="rounded-xl border border-slate-100 bg-white p-4 md:p-5 animate-pulse"
         >
           <div class="flex items-start gap-3">
             <div class="mt-1.5 h-2.5 w-2.5 rounded-full bg-slate-200" />
@@ -155,7 +155,7 @@ function formatLastUpdate(date: Date | null): string {
     <div v-else-if="briefing" class="space-y-6">
       <!-- Hero Card -->
       <div
-        class="relative overflow-hidden rounded-2xl p-8"
+        class="relative overflow-hidden rounded-2xl p-5 md:p-8"
         :style="{
           background: activeType === 'recap'
             ? 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e3a5f 100%)'
@@ -170,7 +170,7 @@ function formatLastUpdate(date: Date | null): string {
               <p class="text-sm font-body uppercase tracking-widest text-slate-400 mb-2">
                 {{ heroSubtitle }}
               </p>
-              <h1 class="font-display text-2xl font-bold text-white mb-4">
+              <h1 class="font-display text-xl md:text-2xl font-bold text-white mb-4">
                 {{ heroTitle }}
               </h1>
             </div>
@@ -181,7 +181,7 @@ function formatLastUpdate(date: Date | null): string {
               {{ nextUpdateLabel }}
             </div>
           </div>
-          <p class="font-editorial text-base text-slate-300 leading-relaxed max-w-3xl">
+          <p class="font-editorial text-sm md:text-base text-slate-300 leading-relaxed max-w-3xl">
             {{ cleanSummary }}
           </p>
 

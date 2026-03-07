@@ -46,23 +46,43 @@ function formatTime(date: Date) {
 
   <!-- List -->
   <template v-else>
-    <div class="space-y-1">
+    <div class="space-y-1 md:space-y-1">
       <NuxtLink
         v-for="article in articles"
         :key="article.id"
         :to="`/article/${article.id}`"
-        class="flex items-center gap-4 rounded-lg bg-white px-4 py-3 transition-colors hover:bg-slate-50 group border border-transparent hover:border-slate-200"
+        class="block rounded-xl bg-white p-4 transition-colors hover:bg-slate-50 group border border-transparent hover:border-slate-200 md:flex md:items-center md:gap-4 md:rounded-lg md:px-4 md:py-3"
       >
-        <UiUrgencyDot :urgency="article.urgency || 'routine'" />
-        <span class="w-20 shrink-0 text-xs text-slate-400 font-mono tabular-nums">
-          {{ formatTime(article.publishedAt) }}
-        </span>
-        <span class="flex-1 min-w-0 truncate text-sm font-semibold text-slate-800 group-hover:text-slate-900">
-          {{ article.title }}
-        </span>
-        <div class="flex items-center gap-2 shrink-0">
-          <UiUrgencyBadge :urgency="article.urgency || 'routine'" />
-          <UiSourceTag :source="article.source" />
+        <!-- Mobile: stacked layout -->
+        <div class="md:hidden">
+          <div class="flex items-start gap-3">
+            <div class="pt-1">
+              <UiUrgencyDot :urgency="article.urgency || 'routine'" />
+            </div>
+            <h3 class="flex-1 text-sm font-semibold leading-snug text-slate-800 group-hover:text-slate-900">
+              {{ article.title }}
+            </h3>
+          </div>
+          <div class="mt-2 flex items-center gap-2 pl-5">
+            <span class="text-xs text-slate-400 font-mono tabular-nums">{{ formatTime(article.publishedAt) }}</span>
+            <UiUrgencyBadge :urgency="article.urgency || 'routine'" />
+            <UiSourceTag :source="article.source" />
+          </div>
+        </div>
+
+        <!-- Desktop: single row -->
+        <div class="hidden md:flex md:items-center md:gap-4 md:w-full">
+          <UiUrgencyDot :urgency="article.urgency || 'routine'" />
+          <span class="w-20 shrink-0 text-xs text-slate-400 font-mono tabular-nums">
+            {{ formatTime(article.publishedAt) }}
+          </span>
+          <span class="flex-1 min-w-0 truncate text-sm font-semibold text-slate-800 group-hover:text-slate-900">
+            {{ article.title }}
+          </span>
+          <div class="flex items-center gap-2 shrink-0">
+            <UiUrgencyBadge :urgency="article.urgency || 'routine'" />
+            <UiSourceTag :source="article.source" />
+          </div>
         </div>
       </NuxtLink>
     </div>
