@@ -45,9 +45,9 @@ function formatLastUpdate(date: Date | null): string {
     >
       <div class="max-w-md rounded-2xl border border-slate-200 bg-white px-8 py-10">
         <Icon name="heroicons:exclamation-triangle" class="mx-auto mb-4 h-10 w-10 text-slate-400" />
-        <p class="mb-1 font-body text-slate-600">No se pudo cargar el analisis semanal.</p>
+        <p class="mb-1 font-body text-slate-600">No se pudo cargar el análisis semanal.</p>
         <p v-if="lastFetchedAt" class="mb-6 font-body text-sm text-slate-400">
-          Ultima actualización: {{ formatLastUpdate(lastFetchedAt) }}
+          Última actualización: {{ formatLastUpdate(lastFetchedAt) }}
         </p>
         <button
           class="rounded-lg bg-institutional-blue px-5 py-2.5 font-body text-sm font-semibold text-white transition-colors hover:bg-blue-700"
@@ -66,7 +66,7 @@ function formatLastUpdate(date: Date | null): string {
       <div class="max-w-md rounded-2xl border border-slate-200 bg-white px-8 py-10">
         <Icon name="heroicons:chart-bar" class="mx-auto mb-4 h-10 w-10 text-slate-400" />
         <p class="font-body text-slate-600">
-          El analisis semanal se genera los domingos a las 23:00. Volve el lunes.
+          El análisis semanal se genera los domingos a las 23:00. Volvé el lunes.
         </p>
       </div>
     </div>

@@ -19,7 +19,7 @@ function getSourceColor(source: string): string {
       </h2>
     </div>
     <p class="mb-6 font-editorial text-sm text-slate-500">
-      Distribucion del tono hacia el gobierno provincial en la cobertura de cada fuente monitoreada.
+      Distribución del tono hacia el gobierno provincial en la cobertura de cada fuente monitoreada.
     </p>
 
     <div class="rounded-2xl border border-slate-100 bg-white p-6">

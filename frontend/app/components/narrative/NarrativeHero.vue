@@ -38,11 +38,11 @@ const sourcesCount = computed(() => props.report.sentimentBySource.length)
           📊
         </div>
         <p class="text-sm font-medium uppercase tracking-wide text-slate-400">
-          Analisis semanal
+          Análisis semanal
         </p>
       </div>
       <h1 class="mt-4 font-display text-2xl font-bold text-white">
-        Radar de Narrativa Politica
+        Radar de Narrativa Política
       </h1>
       <p class="mt-1 text-sm text-slate-400">
         {{ formatPeriod(report.periodStart, report.periodEnd) }}

@@ -32,7 +32,7 @@ function isActive(to: string) {
         <img src="/logos/logo-icon-dark.svg" alt="Alineados" class="h-10 w-10 shrink-0" />
         <div v-if="uiStore.sidebarOpen" class="min-w-0">
           <p class="truncate font-display text-lg font-bold text-white">Alineados</p>
-          <p class="truncate text-[0.6rem] font-medium uppercase tracking-[0.15em] text-slate-400">Inteligencia Politica</p>
+          <p class="truncate text-[0.6rem] font-medium uppercase tracking-[0.15em] text-slate-400">Inteligencia Política</p>
         </div>
       </div>
 
@@ -77,7 +77,7 @@ function isActive(to: string) {
         @click="authStore.logout()"
       >
         <span class="shrink-0 text-base">&#x2192;</span>
-        <span v-if="uiStore.sidebarOpen">Cerrar sesion</span>
+        <span v-if="uiStore.sidebarOpen">Cerrar sesión</span>
       </button>
 
       <!-- Collapse toggle -->

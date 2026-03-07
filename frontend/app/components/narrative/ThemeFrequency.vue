@@ -18,7 +18,7 @@ const maxCount = computed(() =>
       <h2 class="font-display text-lg font-bold text-slate-800">
         Frecuencia de Temas
       </h2>
-      <span class="text-sm text-slate-400">Ultimos 7 dias · todas las fuentes</span>
+      <span class="text-sm text-slate-400">Últimos 7 días · todas las fuentes</span>
     </div>
 
     <div class="space-y-5 rounded-2xl border border-slate-100 bg-white p-6">
@@ -70,7 +70,7 @@ const maxCount = computed(() =>
     </div>
 
     <p class="ml-1 mt-3 font-editorial text-xs text-slate-400">
-      Las flechas indican la variacion respecto a la semana anterior.
+      Las flechas indican la variación respecto a la semana anterior.
     </p>
   </div>
 </template>

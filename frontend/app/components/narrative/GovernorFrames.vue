@@ -15,7 +15,7 @@ defineProps<{
       </h2>
     </div>
     <p class="mb-6 font-editorial text-sm text-slate-500">
-      Analisis de los encuadres comunicacionales utilizados por el gobernador Valdes en sus apariciones publicas esta semana.
+      Análisis de los encuadres comunicacionales utilizados por el gobernador Valdés en sus apariciones públicas esta semana.
     </p>
 
     <div class="space-y-4">

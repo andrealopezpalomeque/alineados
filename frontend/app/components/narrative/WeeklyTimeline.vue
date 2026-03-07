@@ -7,7 +7,7 @@ defineProps<{
 
 const TYPE_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
   gobierno: { color: '#2563eb', bg: 'bg-blue-50', label: 'Gobierno' },
-  oposicion: { color: '#7c3aed', bg: 'bg-purple-50', label: 'Oposicion' },
+  oposicion: { color: '#7c3aed', bg: 'bg-purple-50', label: 'Oposición' },
   nacional: { color: '#dc2626', bg: 'bg-red-50', label: 'Nacional' },
 }
 </script>
@@ -16,11 +16,11 @@ const TYPE_CONFIG: Record<string, { color: string; bg: string; label: string }> 
   <div>
     <div class="mb-2 flex items-center gap-3">
       <h2 class="font-display text-lg font-bold text-slate-800">
-        Linea de Tiempo
+        Línea de Tiempo
       </h2>
     </div>
     <p class="mb-6 font-editorial text-sm text-slate-500">
-      Momentos clave de la semana politica.
+      Momentos clave de la semana política.
     </p>
 
     <div class="rounded-2xl border border-slate-100 bg-white p-6">

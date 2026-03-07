@@ -10,9 +10,9 @@ const emit = defineEmits<{
 const tabs = [
   { id: 'themes', label: 'Temas', icon: '📊' },
   { id: 'frames', label: 'Narrativas del Gobernador', icon: '🏛' },
-  { id: 'opposition', label: 'Radar Oposicion', icon: '📢' },
+  { id: 'opposition', label: 'Radar Oposición', icon: '📢' },
   { id: 'sentiment', label: 'Sentimiento por Fuente', icon: '📰' },
-  { id: 'timeline', label: 'Linea de Tiempo', icon: '📅' },
+  { id: 'timeline', label: 'Línea de Tiempo', icon: '📅' },
 ]
 </script>
 

@@ -15,11 +15,11 @@ export type CommunicationType =
   | 'blame-deflection'
 
 export const COMMUNICATION_TYPE_LABELS: Record<CommunicationType, string> = {
-  'credit-claiming': 'Reclamo de credito',
-  'agenda-setting': 'Fijacion de agenda',
-  'coalition-building': 'Construccion de coalicion',
+  'credit-claiming': 'Reclamo de crédito',
+  'agenda-setting': 'Fijación de agenda',
+  'coalition-building': 'Construcción de coalición',
   'crisis-response': 'Respuesta a crisis',
-  'blame-deflection': 'Deflexion de culpa',
+  'blame-deflection': 'Deflexión de culpa',
 }
 
 export const COMMUNICATION_TYPE_STYLES: Record<CommunicationType, { bg: string; text: string; border: string }> = {

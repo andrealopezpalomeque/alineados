@@ -4,7 +4,7 @@ const {
   loading, error, urgencyCounts, lastFetchedAt, refresh,
 } = useTodayBriefing()
 
-const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado']
+const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
@@ -59,12 +59,12 @@ const nextUpdateLabel = computed(() => {
     ?? SCRAPE_HOURS_UTC[0]
   // Convert UTC hour to ART (UTC-3)
   const artHour = ((next - 3) + 24) % 24
-  return `Proxima: ${String(artHour).padStart(2, '0')}:00`
+  return `Próxima: ${String(artHour).padStart(2, '0')}:00`
 })
 
 const heroTitle = computed(() => {
-  if (!briefing.value) return 'Ultima actualización'
-  return briefing.value.type === 'midday' ? 'Ultima actualización' : 'Resumen de Ayer'
+  if (!briefing.value) return 'Última actualización'
+  return briefing.value.type === 'midday' ? 'Última actualización' : 'Resumen de Ayer'
 })
 
 function formatLastUpdate(date: Date | null): string {
@@ -127,7 +127,7 @@ function formatLastUpdate(date: Date | null): string {
         <Icon name="heroicons:exclamation-triangle" class="h-10 w-10 text-slate-400 mx-auto mb-4" />
         <p class="font-body text-slate-600 mb-1">No se pudo cargar el resumen.</p>
         <p v-if="lastFetchedAt" class="font-body text-sm text-slate-400 mb-6">
-          Ultima actualización: {{ formatLastUpdate(lastFetchedAt) }}
+          Última actualización: {{ formatLastUpdate(lastFetchedAt) }}
         </p>
         <button
           class="rounded-lg bg-institutional-blue px-5 py-2.5 text-sm font-semibold text-white font-body hover:bg-blue-700 transition-colors"
@@ -146,7 +146,7 @@ function formatLastUpdate(date: Date | null): string {
       <div class="rounded-2xl border border-slate-200 bg-white px-8 py-10 max-w-md">
         <Icon name="heroicons:clock" class="h-10 w-10 text-slate-400 mx-auto mb-4" />
         <p class="font-body text-slate-600">
-          El resumen del dia se genera a las 6:00 AM. Volve mas tarde.
+          El resumen del día se genera a las 6:00 AM. Volvé más tarde.
         </p>
       </div>
     </div>
@@ -221,7 +221,7 @@ function formatLastUpdate(date: Date | null): string {
             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
           @click="setActiveType('midday')"
         >
-          Ultima actualización
+          Última actualización
         </button>
         <button
           class="rounded-full px-4 py-1.5 text-sm font-semibold font-body transition-colors"

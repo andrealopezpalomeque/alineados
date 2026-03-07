@@ -28,7 +28,7 @@ function handleLogin() {
         <img src="/logos/logo-icon-light.svg" alt="Alineados" class="mb-4 h-14 w-14" />
         <h1 class="font-display text-2xl font-bold text-white">Alineados</h1>
         <p class="mt-1 text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
-          Inteligencia Politica
+          Inteligencia Política
         </p>
       </div>
 
@@ -51,7 +51,7 @@ function handleLogin() {
 
           <div>
             <label for="password" class="mb-1.5 block text-sm font-medium text-slate-700">
-              Contrasena
+              Contraseña
             </label>
             <input
               id="password"
@@ -59,7 +59,7 @@ function handleLogin() {
               type="password"
               autocomplete="current-password"
               class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
-              placeholder="Contrasena"
+              placeholder="Contraseña"
               @keyup.enter="handleLogin"
             />
           </div>

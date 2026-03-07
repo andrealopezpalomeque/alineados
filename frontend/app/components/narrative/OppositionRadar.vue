@@ -11,11 +11,11 @@ defineProps<{
   <div>
     <div class="mb-2 flex items-center gap-3">
       <h2 class="font-display text-lg font-bold text-slate-800">
-        Radar de Oposicion
+        Radar de Oposición
       </h2>
     </div>
     <p class="mb-6 font-editorial text-sm text-slate-500">
-      Narrativas activas de la oposicion y evaluacion de riesgo comunicacional.
+      Narrativas activas de la oposición y evaluación de riesgo comunicacional.
     </p>
 
     <div class="space-y-4">
@@ -52,7 +52,7 @@ defineProps<{
 
         <div class="rounded-xl border-l-2 border-red-300 bg-red-50 p-4">
           <p class="mb-1 text-xs font-bold uppercase tracking-wider text-red-700">
-            Evaluacion de riesgo
+            Evaluación de riesgo
           </p>
           <p class="font-editorial text-sm leading-relaxed text-red-800">
             {{ item.riskAssessment }}
